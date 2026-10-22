@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useApp } from '../context';
 
-type AdminTab = 'dashboard' | 'posts' | 'uniforms' | 'approvals' | 'coverage' | 'settings';
+type AdminTab = 'dashboard' | 'posts' | 'uniforms' | 'approvals' | 'coverage' | 'ponto' | 'settings';
 
 export default function AdminDashboard() {
   const { currentUser, logout, notifications } = useApp();
@@ -67,6 +67,7 @@ export default function AdminDashboard() {
               { id: 'uniforms' as AdminTab, icon: '👔', label: 'Uniformes' },
               { id: 'approvals' as AdminTab, icon: '✅', label: 'Aprovações' },
               { id: 'coverage' as AdminTab, icon: '🔄', label: 'Coberturas' },
+              { id: 'ponto' as AdminTab, icon: '⏱️', label: 'Ponto' },
               { id: 'settings' as AdminTab, icon: '⚙️', label: 'Configurações' },
             ].map(item => (
               <button
@@ -85,13 +86,14 @@ export default function AdminDashboard() {
 
         {/* Mobile Tabs */}
         <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-50 shadow-lg">
-          <div className="grid grid-cols-6">
+          <div className="grid grid-cols-7">
             {[
               { id: 'dashboard' as AdminTab, icon: '📊', label: 'Painel' },
               { id: 'posts' as AdminTab, icon: '📍', label: 'Postos' },
               { id: 'uniforms' as AdminTab, icon: '👔', label: 'Unif.' },
               { id: 'approvals' as AdminTab, icon: '✅', label: 'Aprov.' },
               { id: 'coverage' as AdminTab, icon: '🔄', label: 'Cobert.' },
+              { id: 'ponto' as AdminTab, icon: '⏱️', label: 'Ponto' },
               { id: 'settings' as AdminTab, icon: '⚙️', label: 'Config.' },
             ].map(tab => (
               <button
@@ -113,6 +115,7 @@ export default function AdminDashboard() {
           {activeTab === 'uniforms' && <UniformsView />}
           {activeTab === 'approvals' && <ApprovalsView />}
           {activeTab === 'coverage' && <CoverageView />}
+          {activeTab === 'ponto' && <PontoView />}
           {activeTab === 'settings' && <SettingsView />}
         </main>
       </div>
@@ -156,8 +159,9 @@ function DashboardView() {
   const warningPosts = posts.filter(p => p.status === 'warning').length;
   const criticalPosts = posts.filter(p => p.status === 'critical').length;
   const pendingUniforms = uniformRequests.filter(r => r.status === 'pending').length;
-  const pendingHE = overtimeRequests.filter(o => o.status === 'pending').length;
+  const pontoAlerts = 2; // Simulated: guards without today's record
   const openTickets = tickets.filter(t => t.status === 'open').length;
+  const pendingHE = overtimeRequests.filter(o => o.status === 'pending').length;
   const activeCoverages = coverages.filter(c => c.status === 'active').length;
 
   return (
@@ -168,7 +172,7 @@ function DashboardView() {
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
         <div className="bg-white rounded-xl p-5 shadow-sm border border-gray-200">
           <div className="flex items-center justify-between">
             <div>
@@ -194,6 +198,15 @@ function DashboardView() {
               <p className="text-3xl font-bold text-blue-600 mt-1">{pendingUniforms + pendingHE}</p>
             </div>
             <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center text-blue-600">📋</div>
+          </div>
+        </div>
+        <div className="bg-white rounded-xl p-5 shadow-sm border border-gray-200">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs text-gray-500 font-medium">Sem Registro Hoje</p>
+              <p className="text-3xl font-bold text-red-500 mt-1">{pontoAlerts}</p>
+            </div>
+            <div className="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center text-red-500">⏱️</div>
           </div>
         </div>
         <div className="bg-white rounded-xl p-5 shadow-sm border border-gray-200">
@@ -649,6 +662,228 @@ function CoverageView() {
           ))}
         </div>
       </div>
+    </div>
+  );
+}
+
+function PontoView() {
+  const { currentUser } = useApp();
+  const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
+  const [selectedYear] = useState(new Date().getFullYear());
+  const WEEKDAYS_SHORT = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+  const MONTHS = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+
+  // Simulated guard time records for admin view
+  const guardRecords: Record<string, Record<string, { entrada1: string; saida1: string; entrada2: string; saida2: string }>> = {
+    '1': { // Carlos Silva
+      '15': { entrada1: '07:00', saida1: '12:00', entrada2: '13:00', saida2: '19:00' },
+      '16': { entrada1: '06:55', saida1: '12:02', entrada2: '13:05', saida2: '19:00' },
+      '17': { entrada1: '07:02', saida1: '12:00', entrada2: '13:00', saida2: '19:05' },
+      '18': { entrada1: '07:00', saida1: '12:00', entrada2: '', saida2: '' },
+      '19': { entrada1: '07:10', saida1: '12:00', entrada2: '13:00', saida2: '19:00' },
+      '20': { entrada1: '', saida1: '', entrada2: '', saida2: '' },
+      '21': { entrada1: '06:58', saida1: '12:00', entrada2: '13:02', saida2: '19:00' },
+    },
+    '2': { // João Santos
+      '15': { entrada1: '19:00', saida1: '00:00', entrada2: '', saida2: '' },
+      '16': { entrada1: '19:05', saida1: '00:00', entrada2: '', saida2: '' },
+      '17': { entrada1: '19:00', saida1: '00:05', entrada2: '', saida2: '' },
+      '18': { entrada1: '19:00', saida1: '00:00', entrada2: '', saida2: '' },
+      '19': { entrada1: '19:00', saida1: '00:00', entrada2: '', saida2: '' },
+      '20': { entrada1: '19:02', saida1: '00:00', entrada2: '', saida2: '' },
+      '21': { entrada1: '', saida1: '', entrada2: '', saida2: '' },
+    },
+    '3': { // Pedro Oliveira
+      '15': { entrada1: '07:00', saida1: '12:00', entrada2: '13:00', saida2: '19:00' },
+      '16': { entrada1: '07:05', saida1: '12:00', entrada2: '13:00', saida2: '19:00' },
+      '17': { entrada1: '', saida1: '', entrada2: '', saida2: '' },
+      '18': { entrada1: '07:00', saida1: '12:00', entrada2: '13:00', saida2: '19:00' },
+      '19': { entrada1: '07:00', saida1: '12:00', entrada2: '13:00', saida2: '19:00' },
+      '20': { entrada1: '07:00', saida1: '12:00', entrada2: '13:00', saida2: '19:00' },
+      '21': { entrada1: '07:00', saida1: '12:00', entrada2: '13:00', saida2: '19:00' },
+    },
+    '4': { // Roberto Lima
+      '15': { entrada1: '19:00', saida1: '00:00', entrada2: '', saida2: '' },
+      '16': { entrada1: '19:00', saida1: '00:00', entrada2: '', saida2: '' },
+      '17': { entrada1: '19:00', saida1: '00:00', entrada2: '', saida2: '' },
+      '18': { entrada1: '19:00', saida1: '00:00', entrada2: '', saida2: '' },
+      '19': { entrada1: '', saida1: '', entrada2: '', saida2: '' },
+      '20': { entrada1: '19:05', saida1: '00:00', entrada2: '', saida2: '' },
+      '21': { entrada1: '19:00', saida1: '00:00', entrada2: '', saida2: '' },
+    },
+  };
+
+  const guards = [
+    { id: '1', name: 'Carlos Silva', matricula: 'V001' },
+    { id: '2', name: 'João Santos', matricula: 'V002' },
+    { id: '3', name: 'Pedro Oliveira', matricula: 'V003' },
+    { id: '4', name: 'Roberto Lima', matricula: 'V004' },
+  ];
+
+  const lastDay = new Date(selectedYear, selectedMonth + 1, 0).getDate();
+  const startDay = 15;
+  const days: number[] = [];
+  for (let d = startDay; d <= lastDay; d++) days.push(d);
+
+  const getDayOfWeek = (day: number) => {
+    const date = new Date(selectedYear, selectedMonth, day);
+    return WEEKDAYS_SHORT[date.getDay()];
+  };
+
+  const isSunday = (day: number) => {
+    const date = new Date(selectedYear, selectedMonth, day);
+    return date.getDay() === 0;
+  };
+
+  const calcDayTotal = (record: { entrada1: string; saida1: string; entrada2: string; saida2: string } | undefined): string => {
+    if (!record || !record.entrada1 || !record.saida1) return '--:--';
+    const toMin = (t: string) => { const [h, m] = t.split(':').map(Number); return h * 60 + m; };
+    let total = toMin(record.saida1) - toMin(record.entrada1);
+    if (record.entrada2 && record.saida2) total += toMin(record.saida2) - toMin(record.entrada2);
+    if (total < 0) total += 24 * 60;
+    const hours = Math.floor(total / 60);
+    const mins = total % 60;
+    return `${String(hours).padStart(2, '0')}h${String(mins).padStart(2, '0')}`;
+  };
+
+  const getGuardStats = (guardId: string) => {
+    const records = guardRecords[guardId] || {};
+    let worked = 0, totalMinutes = 0, absent = 0;
+    days.forEach(d => {
+      const r = records[`${d}`];
+      if (r?.entrada1 && r?.saida1) {
+        worked++;
+        const toMin = (t: string) => { const [h, m] = t.split(':').map(Number); return h * 60 + m; };
+        let dayMin = toMin(r.saida1) - toMin(r.entrada1);
+        if (r.entrada2 && r.saida2) dayMin += toMin(r.saida2) - toMin(r.entrada2);
+        if (dayMin < 0) dayMin += 24 * 60;
+        totalMinutes += dayMin;
+      } else if (!isSunday(d)) {
+        absent++;
+      }
+    });
+    return { worked, totalHours: Math.floor(totalMinutes / 60), absent };
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+        <div>
+          <h2 className="text-2xl font-bold text-gray-800">Relatório de Ponto Eletrônico</h2>
+          <p className="text-gray-500 text-sm">Acompanhe os registros de ponto de todos os vigilantes</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <select
+            value={selectedMonth}
+            onChange={e => setSelectedMonth(+e.target.value)}
+            className="border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white"
+          >
+            {MONTHS.map((m, i) => <option key={i} value={i}>{m}</option>)}
+          </select>
+          <span className="text-sm font-medium text-gray-600">{selectedYear}</span>
+        </div>
+      </div>
+
+      {/* Summary Cards */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        {guards.map(guard => {
+          const stats = getGuardStats(guard.id);
+          return (
+            <div key={guard.id} className="bg-white rounded-xl p-4 shadow-sm border border-gray-200">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center text-indigo-600 font-bold text-sm">
+                  {guard.name.charAt(0)}
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-gray-800">{guard.name}</p>
+                  <p className="text-xs text-gray-500">{guard.matricula}</p>
+                </div>
+              </div>
+              <div className="grid grid-cols-3 gap-2 text-center">
+                <div className="bg-green-50 rounded-lg p-2">
+                  <p className="text-lg font-bold text-green-700">{stats.worked}</p>
+                  <p className="text-[9px] text-green-600">Dias</p>
+                </div>
+                <div className="bg-blue-50 rounded-lg p-2">
+                  <p className="text-lg font-bold text-blue-700">{stats.totalHours}h</p>
+                  <p className="text-[9px] text-blue-600">Total</p>
+                </div>
+                <div className="bg-red-50 rounded-lg p-2">
+                  <p className="text-lg font-bold text-red-700">{stats.absent}</p>
+                  <p className="text-[9px] text-red-600">Faltas</p>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Detailed Table per Guard */}
+      {guards.map(guard => {
+        const records = guardRecords[guard.id] || {};
+        return (
+          <div key={guard.id} className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+            <div className="p-4 border-b border-gray-100 bg-gradient-to-r from-indigo-50 to-purple-50 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 bg-indigo-200 rounded-full flex items-center justify-center text-indigo-700 font-bold text-xs">
+                  {guard.name.charAt(0)}
+                </div>
+                <div>
+                  <h3 className="font-semibold text-gray-800 text-sm">{guard.name}</h3>
+                  <p className="text-xs text-gray-500">Matrícula: {guard.matricula}</p>
+                </div>
+              </div>
+              <button className="text-xs text-indigo-600 font-medium hover:text-indigo-800 transition">
+                Exportar PDF →
+              </button>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-xs">
+                <thead className="bg-gray-800 text-white">
+                  <tr>
+                    <th className="px-3 py-2 text-left font-medium">Dia</th>
+                    <th className="px-2 py-2 text-center font-medium">1ª Ent.</th>
+                    <th className="px-2 py-2 text-center font-medium">1ª Saída</th>
+                    <th className="px-2 py-2 text-center font-medium">2ª Ent.</th>
+                    <th className="px-2 py-2 text-center font-medium">2ª Saída</th>
+                    <th className="px-2 py-2 text-center font-medium">Total</th>
+                    <th className="px-2 py-2 text-center font-medium">Status</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {days.map(day => {
+                    const record = records[`${day}`];
+                    const sunday = isSunday(day);
+                    const hasRecord = record?.entrada1 && record?.saida1;
+                    return (
+                      <tr key={day} className={`${sunday ? 'bg-red-50/50' : hasRecord ? '' : 'bg-yellow-50/30'}`}>
+                        <td className="px-3 py-2">
+                          <span className="font-bold text-gray-700">{String(day).padStart(2, '0')}</span>
+                          <span className={`ml-1.5 text-gray-400 ${sunday ? 'text-red-400' : ''}`}>{getDayOfWeek(day)}</span>
+                        </td>
+                        <td className="px-2 py-2 text-center font-mono">{record?.entrada1 || <span className="text-gray-300">--:--</span>}</td>
+                        <td className="px-2 py-2 text-center font-mono">{record?.saida1 || <span className="text-gray-300">--:--</span>}</td>
+                        <td className="px-2 py-2 text-center font-mono">{record?.entrada2 || <span className="text-gray-300">--:--</span>}</td>
+                        <td className="px-2 py-2 text-center font-mono">{record?.saida2 || <span className="text-gray-300">--:--</span>}</td>
+                        <td className="px-2 py-2 text-center font-mono font-semibold text-green-700">{calcDayTotal(record)}</td>
+                        <td className="px-2 py-2 text-center">
+                          {sunday ? (
+                            <span className="px-1.5 py-0.5 bg-red-100 text-red-600 rounded text-[10px]">Folga</span>
+                          ) : hasRecord ? (
+                            <span className="px-1.5 py-0.5 bg-green-100 text-green-600 rounded text-[10px]">✓ OK</span>
+                          ) : (
+                            <span className="px-1.5 py-0.5 bg-yellow-100 text-yellow-600 rounded text-[10px]">⚠ Pend.</span>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 }

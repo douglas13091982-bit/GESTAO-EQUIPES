@@ -766,6 +766,8 @@ function UniformTab({ items, myRequests, onSubmit, guardId }: any) {
   const [reason, setReason] = useState('');
   const [submitted, setSubmitted] = useState(false);
 
+  const selectedItemData = items.find((i: any) => i.id === selectedItem);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedItem || !size || !reason) return;
@@ -779,6 +781,13 @@ function UniformTab({ items, myRequests, onSubmit, guardId }: any) {
       setQuantity(1);
       setReason('');
     }, 2000);
+  };
+
+  const closeModal = () => {
+    setSelectedItem(null);
+    setSize('');
+    setQuantity(1);
+    setReason('');
   };
 
   return (
@@ -795,50 +804,21 @@ function UniformTab({ items, myRequests, onSubmit, guardId }: any) {
         {items.filter((i: any) => !i.blocked).map((item: any) => (
           <div key={item.id} className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
             <div className="flex justify-between items-start">
-              <div>
+              <div className="flex-1">
                 <h3 className="font-semibold text-gray-800">{item.name}</h3>
-                <p className="text-xs text-gray-500">{item.category} • Estoque: {item.stock}</p>
+                <p className="text-xs text-gray-500">{item.category} • Estoque: <span className={item.stock < 10 ? 'text-red-500 font-semibold' : 'text-gray-600'}>{item.stock}</span></p>
                 <p className="text-xs text-gray-400 mt-1">Tamanhos: {item.sizes.join(', ')}</p>
               </div>
               <button
-                onClick={() => setSelectedItem(item.id === selectedItem ? null : item.id)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition ${selectedItem === item.id ? 'bg-blue-500 text-white' : 'bg-blue-50 text-blue-600 hover:bg-blue-100'}`}
+                onClick={() => setSelectedItem(item.id)}
+                className="ml-3 px-3 py-1.5 rounded-lg text-xs font-medium transition bg-blue-600 text-white hover:bg-blue-700 active:scale-95 shadow-sm"
               >
-                {selectedItem === item.id ? '✓ Selecionado' : 'Solicitar'}
+                Solicitar
               </button>
             </div>
           </div>
         ))}
       </div>
-
-      {selectedItem && (
-        <form onSubmit={handleSubmit} className="bg-white rounded-xl p-4 shadow-sm border border-gray-100 space-y-3">
-          <h3 className="font-semibold text-gray-700">Detalhes da Solicitação</h3>
-          <div>
-            <label className="text-xs text-gray-500 mb-1 block">Tamanho</label>
-            <select value={size} onChange={e => setSize(e.target.value)} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm">
-              <option value="">Selecione...</option>
-              {items.find((i: any) => i.id === selectedItem)?.sizes.map((s: string) => (
-                <option key={s} value={s}>{s}</option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label className="text-xs text-gray-500 mb-1 block">Quantidade</label>
-            <input type="number" min="1" max="5" value={quantity} onChange={e => setQuantity(+e.target.value)} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm" />
-          </div>
-          <div>
-            <label className="text-xs text-gray-500 mb-1 block">Motivo</label>
-            <select value={reason} onChange={e => setReason(e.target.value)} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm">
-              <option value="">Selecione...</option>
-              {uniformReasons.map(r => <option key={r} value={r}>{r}</option>)}
-            </select>
-          </div>
-          <button type="submit" className="w-full py-2.5 bg-blue-600 text-white rounded-lg font-medium text-sm hover:bg-blue-700 transition">
-            Enviar Solicitação
-          </button>
-        </form>
-      )}
 
       <div className="mt-6">
         <h3 className="font-semibold text-gray-700 mb-3">Minhas Solicitações</h3>
@@ -861,6 +841,111 @@ function UniformTab({ items, myRequests, onSubmit, guardId }: any) {
           ))}
         </div>
       </div>
+
+      {/* POPUP MODAL */}
+      {selectedItem && selectedItemData && (
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 backdrop-blur-sm" onClick={closeModal}>
+          <div
+            className="bg-white w-full max-w-sm rounded-t-3xl sm:rounded-3xl shadow-2xl overflow-hidden animate-slide-up"
+            onClick={e => e.stopPropagation()}
+          >
+            {/* Header do popup */}
+            <div className="bg-gradient-to-r from-blue-600 to-cyan-500 p-5 text-white relative">
+              <button
+                onClick={closeModal}
+                className="absolute top-3 right-3 w-8 h-8 bg-white/20 hover:bg-white/30 rounded-full flex items-center justify-center transition"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+              <p className="text-blue-100 text-xs font-medium uppercase tracking-wider">Solicitar Uniforme</p>
+              <h3 className="text-xl font-bold mt-1">{selectedItemData.name}</h3>
+              <div className="flex items-center gap-3 mt-2 text-xs">
+                <span className="bg-white/20 rounded-full px-2 py-0.5">{selectedItemData.category}</span>
+                <span className="bg-white/20 rounded-full px-2 py-0.5">Estoque: {selectedItemData.stock}</span>
+              </div>
+            </div>
+
+            {/* Formulário */}
+            <form onSubmit={handleSubmit} className="p-5 space-y-4">
+              <div>
+                <label className="text-xs font-medium text-gray-600 mb-2 block">Tamanho</label>
+                <div className="grid grid-cols-4 gap-2">
+                  {selectedItemData.sizes.map((s: string) => (
+                    <button
+                      key={s}
+                      type="button"
+                      onClick={() => setSize(s)}
+                      className={`py-2.5 rounded-lg text-sm font-semibold transition ${
+                        size === s
+                          ? 'bg-blue-600 text-white shadow-md shadow-blue-500/30'
+                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      }`}
+                    >
+                      {s}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label className="text-xs font-medium text-gray-600 mb-2 block">Quantidade</label>
+                <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                    className="w-10 h-10 bg-gray-100 hover:bg-gray-200 rounded-lg text-gray-700 font-bold text-lg transition"
+                  >
+                    −
+                  </button>
+                  <div className="flex-1 text-center">
+                    <span className="text-2xl font-bold text-gray-800">{quantity}</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setQuantity(Math.min(5, quantity + 1))}
+                    className="w-10 h-10 bg-gray-100 hover:bg-gray-200 rounded-lg text-gray-700 font-bold text-lg transition"
+                  >
+                    +
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <label className="text-xs font-medium text-gray-600 mb-2 block">Motivo</label>
+                <select
+                  value={reason}
+                  onChange={e => setReason(e.target.value)}
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent"
+                >
+                  <option value="">Selecione o motivo...</option>
+                  {uniformReasons.map(r => <option key={r} value={r}>{r}</option>)}
+                </select>
+              </div>
+
+              {/* Resumo */}
+              {size && reason && (
+                <div className="bg-blue-50 border border-blue-200 rounded-xl p-3">
+                  <p className="text-xs text-blue-600 font-medium mb-1">Resumo da solicitação:</p>
+                  <p className="text-sm text-blue-800">
+                    {selectedItemData.name} • Tam: <strong>{size}</strong> • Qtd: <strong>{quantity}</strong>
+                  </p>
+                  <p className="text-xs text-blue-600 mt-0.5">Motivo: {reason}</p>
+                </div>
+              )}
+
+              <button
+                type="submit"
+                disabled={!size || !reason}
+                className="w-full py-3 bg-gradient-to-r from-blue-600 to-cyan-500 text-white rounded-xl font-semibold text-sm shadow-lg shadow-blue-500/30 hover:shadow-blue-500/50 active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none"
+              >
+                ✓ Enviar Solicitação
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -10,6 +10,8 @@ interface TimeRecord {
   saida1: string;
   entrada2: string;
   saida2: string;
+  entradaHE: string;
+  saidaHE: string;
 }
 
 type TimeRecords = Record<string, TimeRecord>;
@@ -163,7 +165,7 @@ function PontoTab() {
     setTimeRecords(prev => ({
       ...prev,
       [key]: {
-        ...(prev[key] || { entrada1: '', saida1: '', entrada2: '', saida2: '' }),
+        ...(prev[key] || { entrada1: '', saida1: '', entrada2: '', saida2: '', entradaHE: '', saidaHE: '' }),
         [field]: time,
       }
     }));
@@ -177,7 +179,7 @@ function PontoTab() {
     setTimeRecords(prev => ({
       ...prev,
       [key]: {
-        ...(prev[key] || { entrada1: '', saida1: '', entrada2: '', saida2: '' }),
+        ...(prev[key] || { entrada1: '', saida1: '', entrada2: '', saida2: '', entradaHE: '', saidaHE: '' }),
         [field]: '',
       }
     }));
@@ -190,6 +192,8 @@ function PontoTab() {
       case 'saida1': return 'Saída';
       case 'entrada2': return 'Entrada';
       case 'saida2': return 'Saída';
+      case 'entradaHE': return 'Entrada HE';
+      case 'saidaHE': return 'Saída HE';
     }
   };
 
@@ -199,6 +203,8 @@ function PontoTab() {
       case 'saida1': return 2;
       case 'entrada2': return 3;
       case 'saida2': return 4;
+      case 'entradaHE': return 5;
+      case 'saidaHE': return 6;
     }
   };
 
@@ -221,12 +227,14 @@ function PontoTab() {
       </div>
 
       {/* Cabeçalho da tabela */}
-      <div className="shrink-0 bg-gray-800 text-white grid grid-cols-[32px_1fr_1fr_1fr_1fr] gap-0.5 px-1 py-1.5 text-[9px] font-semibold text-center border-b border-gray-700">
-        <div className="text-left pl-1">Dia</div>
+      <div className="shrink-0 bg-gray-800 text-white grid grid-cols-[28px_1fr_1fr_1fr_1fr_1fr_1fr] gap-0.5 px-1 py-1.5 text-[8px] font-semibold text-center border-b border-gray-700">
+        <div className="text-left pl-0.5">Dia</div>
         <div>1ª Ent.</div>
         <div>1ª Saída</div>
         <div>2ª Ent.</div>
         <div>2ª Saída</div>
+        <div className="bg-orange-600/30">Ent. HE</div>
+        <div className="bg-orange-600/30">Saí. HE</div>
       </div>
 
       {/* Linhas dos dias - ocupa todo espaço disponível */}
@@ -234,7 +242,7 @@ function PontoTab() {
         <div className="divide-y divide-gray-100">
           {days.map(day => {
             const key = `${day}`;
-            const record = timeRecords[key] || { entrada1: '', saida1: '', entrada2: '', saida2: '' };
+            const record = timeRecords[key] || { entrada1: '', saida1: '', entrada2: '', saida2: '', entradaHE: '', saidaHE: '' };
             const today = isToday(day);
             const sunday = isSunday(day);
             const dayOfWeek = getDayOfWeek(day);
@@ -242,13 +250,13 @@ function PontoTab() {
             return (
               <div
                 key={day}
-                className={`grid grid-cols-[32px_1fr_1fr_1fr_1fr] gap-0.5 px-1 py-1 items-center ${
+                className={`grid grid-cols-[28px_1fr_1fr_1fr_1fr_1fr_1fr] gap-0.5 px-1 py-1 items-center ${
                   today ? 'bg-yellow-50' : sunday ? 'bg-red-50/60' : ''
                 }`}
               >
                 {/* Dia da semana */}
-                <div className="text-left pl-1">
-                  <span className={`font-bold text-xs leading-none ${today ? 'text-yellow-700' : sunday ? 'text-red-500' : 'text-gray-700'}`}>
+                <div className="text-left pl-0.5">
+                  <span className={`font-bold text-[11px] leading-none ${today ? 'text-yellow-700' : sunday ? 'text-red-500' : 'text-gray-700'}`}>
                     {String(day).padStart(2, '0')}
                   </span>
                   <span className={`block text-[8px] font-medium leading-tight ${
@@ -258,17 +266,34 @@ function PontoTab() {
                   </span>
                 </div>
 
-                {/* Campos de horário */}
+                {/* Campos de horário normais */}
                 {(['entrada1', 'saida1', 'entrada2', 'saida2'] as const).map((field) => (
                   <button
                     key={field}
                     onClick={() => handleFieldClick(day, field)}
-                    className={`py-1.5 px-0.5 rounded text-center font-mono text-[11px] transition-all active:scale-95 ${
+                    className={`py-1.5 px-0.5 rounded text-center font-mono text-[10px] transition-all active:scale-95 ${
                       record[field]
                         ? 'bg-blue-100 text-blue-800 border border-blue-200'
                         : today
                           ? 'bg-yellow-100 text-yellow-700 border border-yellow-200 border-dashed'
                           : 'bg-gray-50 text-gray-400 border border-gray-200 border-dashed'
+                    }`}
+                  >
+                    {record[field] || '--:--'}
+                  </button>
+                ))}
+
+                {/* Campos de Horas Extras */}
+                {(['entradaHE', 'saidaHE'] as const).map((field) => (
+                  <button
+                    key={field}
+                    onClick={() => handleFieldClick(day, field)}
+                    className={`py-1.5 px-0.5 rounded text-center font-mono text-[10px] transition-all active:scale-95 ${
+                      record[field]
+                        ? 'bg-orange-100 text-orange-800 border border-orange-200'
+                        : today
+                          ? 'bg-yellow-50 text-orange-400 border border-orange-200 border-dashed'
+                          : 'bg-orange-50/50 text-orange-300 border border-orange-200/50 border-dashed'
                     }`}
                   >
                     {record[field] || '--:--'}
@@ -317,9 +342,11 @@ function PontoResumo({ onBack }: { onBack: () => void }) {
   // Calcula totais
   let totalDaysWorked = 0;
   let totalMinutes = 0;
+  let totalMinutesHE = 0;
   let daysMissing = 0;
 
   const dailyTotals: Record<number, string> = {};
+  const dailyHE: Record<number, string> = {};
 
   days.forEach(d => {
     const r = timeRecords[`${d}`];
@@ -333,14 +360,29 @@ function PontoResumo({ onBack }: { onBack: () => void }) {
       const hours = Math.floor(dayMin / 60);
       const mins = dayMin % 60;
       dailyTotals[d] = `${String(hours).padStart(2, '0')}h${String(mins).padStart(2, '0')}`;
+      
+      // Calcula Horas Extras
+      if (r.entradaHE && r.saidaHE) {
+        let heMin = toMin(r.saidaHE) - toMin(r.entradaHE);
+        if (heMin < 0) heMin += 24 * 60;
+        totalMinutesHE += heMin;
+        const heHours = Math.floor(heMin / 60);
+        const heMins = heMin % 60;
+        dailyHE[d] = `${String(heHours).padStart(2, '0')}h${String(heMins).padStart(2, '0')}`;
+      } else {
+        dailyHE[d] = '--:--';
+      }
     } else {
       dailyTotals[d] = '--:--';
+      dailyHE[d] = '--:--';
       if (!isSunday(d)) daysMissing++;
     }
   });
 
   const totalHours = Math.floor(totalMinutes / 60);
   const totalMins = totalMinutes % 60;
+  const totalHoursHE = Math.floor(totalMinutesHE / 60);
+  const totalMinsHE = totalMinutesHE % 60;
 
   return (
     <div className="h-screen bg-gray-50 flex flex-col max-w-lg mx-auto">
@@ -364,7 +406,7 @@ function PontoResumo({ onBack }: { onBack: () => void }) {
       {/* Content */}
       <main className="flex-1 overflow-y-auto p-4 space-y-4">
         {/* Cards de resumo */}
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-2 gap-3">
           <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100 text-center">
             <div className="w-10 h-10 mx-auto bg-green-100 rounded-full flex items-center justify-center text-green-600 text-lg mb-2">✓</div>
             <p className="text-2xl font-bold text-green-700">{totalDaysWorked}</p>
@@ -376,8 +418,13 @@ function PontoResumo({ onBack }: { onBack: () => void }) {
             <p className="text-[10px] text-gray-500 mt-1">Total de Horas</p>
           </div>
           <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100 text-center">
-            <div className="w-10 h-10 mx-auto bg-orange-100 rounded-full flex items-center justify-center text-orange-600 text-lg mb-2">⚠</div>
-            <p className="text-2xl font-bold text-orange-700">{daysMissing}</p>
+            <div className="w-10 h-10 mx-auto bg-orange-100 rounded-full flex items-center justify-center text-orange-600 text-lg mb-2">⏰</div>
+            <p className="text-2xl font-bold text-orange-700">{totalHoursHE}h{String(totalMinsHE).padStart(2, '0')}</p>
+            <p className="text-[10px] text-gray-500 mt-1">Horas Extras</p>
+          </div>
+          <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100 text-center">
+            <div className="w-10 h-10 mx-auto bg-red-100 rounded-full flex items-center justify-center text-red-600 text-lg mb-2">⚠</div>
+            <p className="text-2xl font-bold text-red-700">{daysMissing}</p>
             <p className="text-[10px] text-gray-500 mt-1">Pendências</p>
           </div>
         </div>
@@ -408,6 +455,7 @@ function PontoResumo({ onBack }: { onBack: () => void }) {
               const r = timeRecords[`${day}`];
               const sunday = isSunday(day);
               const hasRecord = r?.entrada1 && r?.saida1;
+              const hasHE = r?.entradaHE && r?.saidaHE;
               const dayOfWeek = WEEKDAYS[new Date(getYear(), new Date().getMonth(), day).getDay()];
 
               return (
@@ -421,17 +469,31 @@ function PontoResumo({ onBack }: { onBack: () => void }) {
                       {sunday ? (
                         <span className="text-red-500 font-medium">Folga</span>
                       ) : hasRecord ? (
-                        <span>
-                          {r.entrada1} - {r.saida1}
-                          {r.entrada2 && r.saida2 && <span> | {r.entrada2} - {r.saida2}</span>}
-                        </span>
+                        <div className="space-y-0.5">
+                          <div>
+                            {r.entrada1} - {r.saida1}
+                            {r.entrada2 && r.saida2 && <span> | {r.entrada2} - {r.saida2}</span>}
+                          </div>
+                          {hasHE && (
+                            <div className="text-orange-600">
+                              HE: {r.entradaHE} - {r.saidaHE}
+                            </div>
+                          )}
+                        </div>
                       ) : (
                         <span className="text-orange-500">Não registrado</span>
                       )}
                     </div>
                   </div>
-                  <div className={`text-xs font-mono font-semibold ${hasRecord ? 'text-green-700' : 'text-gray-300'}`}>
-                    {dailyTotals[day]}
+                  <div className="text-right">
+                    <div className={`text-xs font-mono font-semibold ${hasRecord ? 'text-green-700' : 'text-gray-300'}`}>
+                      {dailyTotals[day]}
+                    </div>
+                    {hasHE && (
+                      <div className="text-[10px] font-mono text-orange-600">
+                        +{dailyHE[day]}
+                      </div>
+                    )}
                   </div>
                 </div>
               );
@@ -484,17 +546,19 @@ function ClockModal({
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 backdrop-blur-sm" onClick={onClose}>
       <div className="bg-white w-full max-w-sm rounded-t-3xl sm:rounded-3xl shadow-2xl overflow-hidden animate-slide-up" onClick={e => e.stopPropagation()}>
         {/* Header do modal */}
-        <div className="bg-gradient-to-r from-indigo-600 to-purple-600 p-5 text-white text-center">
-          <p className="text-indigo-200 text-xs font-medium uppercase tracking-wider">Registrar Ponto</p>
+        <div className={`p-5 text-white text-center ${fieldIndex >= 5 ? 'bg-gradient-to-r from-orange-500 to-red-500' : 'bg-gradient-to-r from-indigo-600 to-purple-600'}`}>
+          <p className={`text-xs font-medium uppercase tracking-wider ${fieldIndex >= 5 ? 'text-orange-100' : 'text-indigo-200'}`}>
+            {fieldIndex >= 5 ? 'Registrar Hora Extra' : 'Registrar Ponto'}
+          </p>
           <p className="text-xl font-bold mt-1">
             {String(day).padStart(2, '0')}/{String(new Date().getMonth() + 1).padStart(2, '0')} - {dayOfWeek}
           </p>
-          <div className="mt-2 inline-flex items-center gap-2 bg-white/20 rounded-full px-4 py-1.5">
+          <div className={`mt-2 inline-flex items-center gap-2 rounded-full px-4 py-1.5 ${fieldIndex >= 5 ? 'bg-white/20' : 'bg-white/20'}`}>
             <span className="text-sm">
-              {fieldIndex <= 2 ? '🌅' : '🌆'}
+              {fieldIndex >= 5 ? '⏰' : fieldIndex <= 2 ? '🌅' : '🌆'}
             </span>
             <span className="font-semibold text-sm">
-              {fieldIndex}º Registro - {fieldLabel}
+              {fieldIndex >= 5 ? fieldLabel : `${fieldIndex}º Registro - ${fieldLabel}`}
             </span>
           </div>
         </div>

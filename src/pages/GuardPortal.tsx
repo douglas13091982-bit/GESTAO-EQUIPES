@@ -3,6 +3,7 @@ import { useApp } from '../context';
 import { uniformReasons, ticketCategories } from '../data';
 
 type Tab = 'home' | 'uniform' | 'ticket' | 'coverage' | 'ponto';
+type PontoView = 'tabela' | 'resumo';
 
 interface TimeRecord {
   entrada1: string;
@@ -32,6 +33,7 @@ function getYear(): number {
 export default function GuardPortal() {
   const { currentUser, logout, uniformItems, uniformRequests, tickets, coverages, addUniformRequest, addTicket, addCoverage, checkInCoverage, checkOutCoverage } = useApp();
   const [activeTab, setActiveTab] = useState<Tab>('home');
+  const [pontoView, setPontoView] = useState<PontoView>('tabela');
 
   if (!currentUser) return null;
 
@@ -39,10 +41,15 @@ export default function GuardPortal() {
   const myTickets = tickets.filter(t => t.guardId === currentUser.id);
   const myCoverages = coverages.filter(c => c.coverageId === currentUser.id || c.titularId === currentUser.id);
 
+  // Se estiver na view resumo do ponto, renderiza em tela cheia
+  if (activeTab === 'ponto' && pontoView === 'resumo') {
+    return <PontoResumo onBack={() => setPontoView('tabela')} />;
+  }
+
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col max-w-lg mx-auto">
+    <div className="h-screen bg-gray-50 flex flex-col max-w-lg mx-auto overflow-hidden">
       {/* Header */}
-      <header className="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-4 shadow-lg">
+      <header className="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-4 shadow-lg shrink-0">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center text-lg font-bold">
@@ -53,16 +60,26 @@ export default function GuardPortal() {
               <p className="text-blue-200 text-xs">Mat: {currentUser.matricula}</p>
             </div>
           </div>
-          <button onClick={logout} className="text-blue-200 hover:text-white transition p-2">
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-            </svg>
-          </button>
+          <div className="flex items-center gap-2">
+            {activeTab === 'ponto' && (
+              <button
+                onClick={() => setPontoView('resumo')}
+                className="text-xs bg-white/20 hover:bg-white/30 px-3 py-1.5 rounded-lg font-medium transition flex items-center gap-1"
+              >
+                📊 Resumo
+              </button>
+            )}
+            <button onClick={logout} className="text-blue-200 hover:text-white transition p-2">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+              </svg>
+            </button>
+          </div>
         </div>
       </header>
 
       {/* Content */}
-      <main className="flex-1 overflow-y-auto p-4 pb-24">
+      <main className={`flex-1 overflow-hidden ${activeTab === 'ponto' ? '' : 'overflow-y-auto p-4'}`}>
         {activeTab === 'home' && <HomeTab myRequests={myRequests} myTickets={myTickets} myCoverages={myCoverages} />}
         {activeTab === 'uniform' && <UniformTab items={uniformItems} myRequests={myRequests} onSubmit={addUniformRequest} guardId={currentUser.id} />}
         {activeTab === 'ticket' && <TicketTab myTickets={myTickets} onSubmit={addTicket} guardId={currentUser.id} />}
@@ -71,7 +88,7 @@ export default function GuardPortal() {
       </main>
 
       {/* Bottom Navigation */}
-      <nav className="fixed bottom-0 left-0 right-0 max-w-lg mx-auto bg-white border-t border-gray-200 shadow-lg">
+      <nav className="shrink-0 bg-white border-t border-gray-200 shadow-lg">
         <div className="grid grid-cols-5">
           {[
             { id: 'home' as Tab, icon: '🏠', label: 'Início' },
@@ -95,7 +112,7 @@ export default function GuardPortal() {
   );
 }
 
-/* ==================== PONTO ELETRÔNICO ==================== */
+/* ==================== PONTO ELETRÔNICO - TELA CHEIA ==================== */
 function PontoTab() {
   const [timeRecords, setTimeRecords] = useState<TimeRecords>(() => {
     const saved = localStorage.getItem('ponto_records');
@@ -185,78 +202,36 @@ function PontoTab() {
     }
   };
 
-  // Calculate total hours for a day
-  const getDayTotal = (day: number): string => {
-    const key = `${day}`;
-    const record = timeRecords[key];
-    if (!record || !record.entrada1 || !record.saida1) return '--:--';
-    
-    const toMinutes = (t: string) => {
-      const [h, m] = t.split(':').map(Number);
-      return h * 60 + m;
-    };
-
-    let total = toMinutes(record.saida1) - toMinutes(record.entrada1);
-    if (record.entrada2 && record.saida2) {
-      total += toMinutes(record.saida2) - toMinutes(record.entrada2);
-    }
-
-    if (total < 0) total += 24 * 60; // overnight
-    const hours = Math.floor(total / 60);
-    const mins = total % 60;
-    return `${String(hours).padStart(2, '0')}h${String(mins).padStart(2, '0')}`;
-  };
-
   return (
-    <div className="space-y-4">
-      {/* Header do Ponto */}
-      <div className="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-2xl p-5 text-white shadow-lg">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-lg font-bold">Ponto Eletrônico</h2>
-            <p className="text-indigo-200 text-sm">{getMonthName()} / {getYear()}</p>
-          </div>
-          <div className="text-right">
-            <p className="text-2xl font-mono font-bold">
-              {currentTime.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
-            </p>
-            <p className="text-indigo-200 text-xs">
-              {currentTime.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' })}
-            </p>
-          </div>
+    <div className="h-full flex flex-col bg-white">
+      {/* Header compacto do ponto */}
+      <div className="shrink-0 bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-3 py-2 flex items-center justify-between">
+        <div>
+          <p className="text-xs font-medium opacity-80">{getMonthName()} / {getYear()}</p>
+          <p className="text-sm font-bold">Ponto Eletrônico</p>
+        </div>
+        <div className="text-right">
+          <p className="text-xl font-mono font-bold leading-tight">
+            {currentTime.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+          </p>
+          <p className="text-[10px] opacity-80">
+            {WEEKDAYS[currentTime.getDay()]} {String(currentTime.getDate()).padStart(2, '0')}
+          </p>
         </div>
       </div>
 
-      {/* Legenda */}
-      <div className="flex items-center gap-3 text-xs text-gray-500 bg-white rounded-xl p-3 shadow-sm border border-gray-100">
-        <div className="flex items-center gap-1">
-          <span className="w-3 h-3 rounded bg-blue-100 border border-blue-300"></span>
-          <span>Registrado</span>
-        </div>
-        <div className="flex items-center gap-1">
-          <span className="w-3 h-3 rounded bg-yellow-100 border border-yellow-300"></span>
-          <span>Hoje</span>
-        </div>
-        <div className="flex items-center gap-1">
-          <span className="w-3 h-3 rounded bg-red-50 border border-red-200"></span>
-          <span>Domingo</span>
-        </div>
+      {/* Cabeçalho da tabela */}
+      <div className="shrink-0 bg-gray-800 text-white grid grid-cols-[32px_1fr_1fr_1fr_1fr] gap-0.5 px-1 py-1.5 text-[9px] font-semibold text-center border-b border-gray-700">
+        <div className="text-left pl-1">Dia</div>
+        <div>1ª Ent.</div>
+        <div>1ª Saída</div>
+        <div>2ª Ent.</div>
+        <div>2ª Saída</div>
       </div>
 
-      {/* Tabela de Ponto */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-        {/* Cabeçalho da tabela */}
-        <div className="bg-gray-800 text-white px-3 py-2.5 grid grid-cols-[40px_1fr_1fr_1fr_1fr_60px] gap-1 text-[10px] font-semibold text-center sticky top-0 z-10">
-          <div className="text-left">Dia</div>
-          <div>1ª Entrada</div>
-          <div>1ª Saída</div>
-          <div>2ª Entrada</div>
-          <div>2ª Saída</div>
-          <div>Total</div>
-        </div>
-
-        {/* Linhas dos dias */}
-        <div className="divide-y divide-gray-100 max-h-[60vh] overflow-y-auto">
+      {/* Linhas dos dias - ocupa todo espaço disponível */}
+      <div className="flex-1 overflow-y-auto">
+        <div className="divide-y divide-gray-100">
           {days.map(day => {
             const key = `${day}`;
             const record = timeRecords[key] || { entrada1: '', saida1: '', entrada2: '', saida2: '' };
@@ -267,16 +242,16 @@ function PontoTab() {
             return (
               <div
                 key={day}
-                className={`grid grid-cols-[40px_1fr_1fr_1fr_1fr_60px] gap-1 px-2 py-2 items-center text-xs ${
-                  today ? 'bg-yellow-50' : sunday ? 'bg-red-50/50' : 'hover:bg-gray-50'
+                className={`grid grid-cols-[32px_1fr_1fr_1fr_1fr] gap-0.5 px-1 py-1 items-center ${
+                  today ? 'bg-yellow-50' : sunday ? 'bg-red-50/60' : ''
                 }`}
               >
                 {/* Dia da semana */}
-                <div className="text-left">
-                  <span className={`font-bold text-sm ${today ? 'text-yellow-700' : sunday ? 'text-red-500' : 'text-gray-700'}`}>
+                <div className="text-left pl-1">
+                  <span className={`font-bold text-xs leading-none ${today ? 'text-yellow-700' : sunday ? 'text-red-500' : 'text-gray-700'}`}>
                     {String(day).padStart(2, '0')}
                   </span>
-                  <span className={`block text-[9px] font-medium ${
+                  <span className={`block text-[8px] font-medium leading-tight ${
                     today ? 'text-yellow-600' : sunday ? 'text-red-400' : dayOfWeek === 'Dom' ? 'text-red-400' : 'text-gray-400'
                   }`}>
                     {dayOfWeek}
@@ -288,63 +263,20 @@ function PontoTab() {
                   <button
                     key={field}
                     onClick={() => handleFieldClick(day, field)}
-                    className={`py-2 px-1 rounded-lg text-center font-mono text-xs transition-all active:scale-95 ${
+                    className={`py-1.5 px-0.5 rounded text-center font-mono text-[11px] transition-all active:scale-95 ${
                       record[field]
-                        ? 'bg-blue-100 text-blue-800 border border-blue-200 hover:bg-blue-200'
+                        ? 'bg-blue-100 text-blue-800 border border-blue-200'
                         : today
-                          ? 'bg-yellow-100 text-yellow-700 border border-yellow-200 border-dashed hover:bg-yellow-200'
-                          : 'bg-gray-50 text-gray-400 border border-gray-200 border-dashed hover:bg-gray-100 hover:text-gray-600'
+                          ? 'bg-yellow-100 text-yellow-700 border border-yellow-200 border-dashed'
+                          : 'bg-gray-50 text-gray-400 border border-gray-200 border-dashed'
                     }`}
                   >
                     {record[field] || '--:--'}
                   </button>
                 ))}
-
-                {/* Total do dia */}
-                <div className={`text-center font-mono text-[10px] font-semibold ${
-                  record.entrada1 && record.saida1 ? 'text-green-700' : 'text-gray-300'
-                }`}>
-                  {getDayTotal(day)}
-                </div>
               </div>
             );
           })}
-        </div>
-      </div>
-
-      {/* Resumo do mês */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
-        <h3 className="font-semibold text-gray-700 text-sm mb-3">Resumo do Período</h3>
-        <div className="grid grid-cols-3 gap-3">
-          <div className="text-center bg-green-50 rounded-lg p-3">
-            <p className="text-lg font-bold text-green-700">
-              {days.filter(d => timeRecords[`${d}`]?.entrada1).length}
-            </p>
-            <p className="text-[10px] text-green-600">Dias Trabalhados</p>
-          </div>
-          <div className="text-center bg-blue-50 rounded-lg p-3">
-            <p className="text-lg font-bold text-blue-700">
-              {(() => {
-                let total = 0;
-                days.forEach(d => {
-                  const r = timeRecords[`${d}`];
-                  if (r?.entrada1 && r?.saida1) {
-                    const toMin = (t: string) => { const [h, m] = t.split(':').map(Number); return h * 60 + m; };
-                    total += toMin(r.saida1) - toMin(r.entrada1);
-                    if (r.entrada2 && r.saida2) total += toMin(r.saida2) - toMin(r.entrada2);
-                  }
-                });
-                return `${Math.floor(total / 60)}h`;
-              })()}
-            </p>
-            <p className="text-[10px] text-blue-600">Total Horas</p>
-          </div>
-          <div className="text-center bg-orange-50 rounded-lg p-3">
-            <p className="text-lg font-bold text-orange-700">
-              {days.filter(d => !timeRecords[`${d}`]?.entrada1 && !isSunday(d)).length}
-            </p>
-            <p className="text-[10px] text-orange-600">Pendências</p>
-          </div>
         </div>
       </div>
 
@@ -361,6 +293,152 @@ function PontoTab() {
           onClose={() => setClockModal(null)}
         />
       )}
+    </div>
+  );
+}
+
+/* ==================== PONTO RESUMO - TELA SEPARADA ==================== */
+function PontoResumo({ onBack }: { onBack: () => void }) {
+  const [timeRecords] = useState<TimeRecords>(() => {
+    const saved = localStorage.getItem('ponto_records');
+    return saved ? JSON.parse(saved) : {};
+  });
+
+  const lastDay = getLastDayOfMonth();
+  const startDay = 15;
+  const days: number[] = [];
+  for (let d = startDay; d <= lastDay; d++) days.push(d);
+
+  const isSunday = (day: number): boolean => {
+    const date = new Date(getYear(), new Date().getMonth(), day);
+    return date.getDay() === 0;
+  };
+
+  // Calcula totais
+  let totalDaysWorked = 0;
+  let totalMinutes = 0;
+  let daysMissing = 0;
+
+  const dailyTotals: Record<number, string> = {};
+
+  days.forEach(d => {
+    const r = timeRecords[`${d}`];
+    if (r?.entrada1 && r?.saida1) {
+      totalDaysWorked++;
+      const toMin = (t: string) => { const [h, m] = t.split(':').map(Number); return h * 60 + m; };
+      let dayMin = toMin(r.saida1) - toMin(r.entrada1);
+      if (r.entrada2 && r.saida2) dayMin += toMin(r.saida2) - toMin(r.entrada2);
+      if (dayMin < 0) dayMin += 24 * 60;
+      totalMinutes += dayMin;
+      const hours = Math.floor(dayMin / 60);
+      const mins = dayMin % 60;
+      dailyTotals[d] = `${String(hours).padStart(2, '0')}h${String(mins).padStart(2, '0')}`;
+    } else {
+      dailyTotals[d] = '--:--';
+      if (!isSunday(d)) daysMissing++;
+    }
+  });
+
+  const totalHours = Math.floor(totalMinutes / 60);
+  const totalMins = totalMinutes % 60;
+
+  return (
+    <div className="h-screen bg-gray-50 flex flex-col max-w-lg mx-auto">
+      {/* Header */}
+      <header className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white p-4 shadow-lg shrink-0">
+        <div className="flex items-center justify-between">
+          <button onClick={onBack} className="flex items-center gap-2 text-white/80 hover:text-white transition">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+            <span className="text-sm font-medium">Voltar</span>
+          </button>
+          <div className="text-center">
+            <h1 className="text-lg font-bold">Resumo do Ponto</h1>
+            <p className="text-xs text-indigo-200">{getMonthName()} / {getYear()}</p>
+          </div>
+          <div className="w-16"></div>
+        </div>
+      </header>
+
+      {/* Content */}
+      <main className="flex-1 overflow-y-auto p-4 space-y-4">
+        {/* Cards de resumo */}
+        <div className="grid grid-cols-3 gap-3">
+          <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100 text-center">
+            <div className="w-10 h-10 mx-auto bg-green-100 rounded-full flex items-center justify-center text-green-600 text-lg mb-2">✓</div>
+            <p className="text-2xl font-bold text-green-700">{totalDaysWorked}</p>
+            <p className="text-[10px] text-gray-500 mt-1">Dias Trabalhados</p>
+          </div>
+          <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100 text-center">
+            <div className="w-10 h-10 mx-auto bg-blue-100 rounded-full flex items-center justify-center text-blue-600 text-lg mb-2">⏱</div>
+            <p className="text-2xl font-bold text-blue-700">{totalHours}h{String(totalMins).padStart(2, '0')}</p>
+            <p className="text-[10px] text-gray-500 mt-1">Total de Horas</p>
+          </div>
+          <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100 text-center">
+            <div className="w-10 h-10 mx-auto bg-orange-100 rounded-full flex items-center justify-center text-orange-600 text-lg mb-2">⚠</div>
+            <p className="text-2xl font-bold text-orange-700">{daysMissing}</p>
+            <p className="text-[10px] text-gray-500 mt-1">Pendências</p>
+          </div>
+        </div>
+
+        {/* Média diária */}
+        <div className="bg-gradient-to-r from-indigo-500 to-purple-500 rounded-xl p-4 text-white shadow-lg">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs opacity-80">Média diária de trabalho</p>
+              <p className="text-3xl font-bold font-mono">
+                {totalDaysWorked > 0 ? `${Math.floor(totalMinutes / totalDaysWorked / 60)}h${String(Math.floor(totalMinutes / totalDaysWorked) % 60).padStart(2, '0')}` : '00h00'}
+              </p>
+            </div>
+            <div className="text-right">
+              <p className="text-xs opacity-80">Período</p>
+              <p className="text-sm font-semibold">15 a {lastDay}</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Detalhamento por dia */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+          <div className="p-3 border-b border-gray-100 bg-gray-50">
+            <h3 className="font-semibold text-gray-700 text-sm">Detalhamento Diário</h3>
+          </div>
+          <div className="divide-y divide-gray-100 max-h-[40vh] overflow-y-auto">
+            {days.map(day => {
+              const r = timeRecords[`${day}`];
+              const sunday = isSunday(day);
+              const hasRecord = r?.entrada1 && r?.saida1;
+              const dayOfWeek = WEEKDAYS[new Date(getYear(), new Date().getMonth(), day).getDay()];
+
+              return (
+                <div key={day} className={`px-3 py-2 flex items-center justify-between ${sunday ? 'bg-red-50/50' : ''}`}>
+                  <div className="flex items-center gap-3">
+                    <div className="text-center w-8">
+                      <p className={`text-sm font-bold ${sunday ? 'text-red-500' : 'text-gray-700'}`}>{String(day).padStart(2, '0')}</p>
+                      <p className={`text-[9px] ${sunday ? 'text-red-400' : 'text-gray-400'}`}>{dayOfWeek}</p>
+                    </div>
+                    <div className="text-xs text-gray-600">
+                      {sunday ? (
+                        <span className="text-red-500 font-medium">Folga</span>
+                      ) : hasRecord ? (
+                        <span>
+                          {r.entrada1} - {r.saida1}
+                          {r.entrada2 && r.saida2 && <span> | {r.entrada2} - {r.saida2}</span>}
+                        </span>
+                      ) : (
+                        <span className="text-orange-500">Não registrado</span>
+                      )}
+                    </div>
+                  </div>
+                  <div className={`text-xs font-mono font-semibold ${hasRecord ? 'text-green-700' : 'text-gray-300'}`}>
+                    {dailyTotals[day]}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </main>
     </div>
   );
 }
@@ -529,7 +607,6 @@ function HomeTab({ myRequests, myTickets, myCoverages }: any) {
   const openTickets = myTickets.filter((t: any) => t.status === 'open').length;
   const activeCoverage = myCoverages.find((c: any) => c.status === 'active');
 
-  // Calculate today's work status
   const today = new Date().getDate();
   const saved = localStorage.getItem('ponto_records');
   const records = saved ? JSON.parse(saved) : {};
@@ -543,7 +620,6 @@ function HomeTab({ myRequests, myTickets, myCoverages }: any) {
         <p className="text-blue-100 text-sm mt-1">Resumo do seu dia</p>
       </div>
 
-      {/* Ponto Status */}
       <div className={`rounded-xl p-4 border ${hasPontoToday ? 'bg-green-50 border-green-200' : 'bg-orange-50 border-orange-200'}`}>
         <div className="flex items-center gap-3">
           <span className="text-2xl">{hasPontoToday ? '✅' : '⚠️'}</span>
@@ -700,7 +776,6 @@ function UniformTab({ items, myRequests, onSubmit, guardId }: any) {
         </form>
       )}
 
-      {/* History */}
       <div className="mt-6">
         <h3 className="font-semibold text-gray-700 mb-3">Minhas Solicitações</h3>
         <div className="space-y-2">
@@ -812,7 +887,6 @@ function TicketTab({ myTickets, onSubmit, guardId }: any) {
         </form>
       )}
 
-      {/* Tickets List */}
       <div className="space-y-2">
         {myTickets.map((ticket: any) => (
           <div key={ticket.id} className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
@@ -901,7 +975,6 @@ function CoverageTab({ myCoverages, onCheckIn, onCheckOut, guardId, guardName }:
         </form>
       )}
 
-      {/* QR Code Scanner */}
       <div className="bg-gradient-to-r from-purple-500 to-indigo-500 rounded-xl p-5 text-white">
         <div className="flex items-center gap-3 mb-3">
           <span className="text-2xl">📱</span>
@@ -915,7 +988,6 @@ function CoverageTab({ myCoverages, onCheckIn, onCheckOut, guardId, guardName }:
         </button>
       </div>
 
-      {/* Coverages */}
       <div className="space-y-3">
         <h3 className="font-semibold text-gray-700">Minhas Coberturas</h3>
         {myCoverages.map((cov: any) => (

@@ -996,10 +996,17 @@ function UniformsView() {
 
 function ApprovalsView() {
   const { uniformRequests, overtimeRequests, tickets, updateUniformRequestStatus, updateOvertimeStatus, updateTicketStatus } = useApp();
+  const [activeTab, setActiveTab] = useState<'uniforms' | 'overtime' | 'tickets'>('uniforms');
   
   const pendingUniforms = uniformRequests.filter(r => r.status === 'pending');
   const pendingHE = overtimeRequests.filter(o => o.status === 'pending');
   const openTickets = tickets.filter(t => t.status === 'open');
+
+  const tabs = [
+    { id: 'uniforms' as const, label: 'Uniformes', count: pendingUniforms.length, icon: '👔', color: 'yellow' },
+    { id: 'overtime' as const, label: 'Horas Extra', count: pendingHE.length, icon: '⏰', color: 'purple' },
+    { id: 'tickets' as const, label: 'Chamados', count: openTickets.length, icon: '🔧', color: 'blue' },
+  ];
 
   return (
     <div className="space-y-6">
@@ -1008,117 +1015,163 @@ function ApprovalsView() {
         <p className="text-gray-500 text-sm">Aprove ou recuse solicitações pendentes</p>
       </div>
 
-      {/* Summary Cards */}
-      <div className="grid grid-cols-3 gap-4">
-        <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4 text-center">
-          <p className="text-3xl font-bold text-yellow-600">{pendingUniforms.length}</p>
-          <p className="text-xs text-yellow-700 mt-1">Uniformes</p>
+      {/* Tabs */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        <div className="flex border-b border-gray-200">
+          {tabs.map(tab => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`flex-1 px-4 py-4 text-sm font-medium transition-all relative ${
+                activeTab === tab.id
+                  ? 'text-gray-800 bg-gray-50'
+                  : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50/50'
+              }`}
+            >
+              <div className="flex items-center justify-center gap-2">
+                <span className="text-lg">{tab.icon}</span>
+                <span>{tab.label}</span>
+                {tab.count > 0 && (
+                  <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${
+                    tab.color === 'yellow' ? 'bg-yellow-100 text-yellow-700' :
+                    tab.color === 'purple' ? 'bg-purple-100 text-purple-700' :
+                    'bg-blue-100 text-blue-700'
+                  }`}>
+                    {tab.count}
+                  </span>
+                )}
+              </div>
+              {activeTab === tab.id && (
+                <div className={`absolute bottom-0 left-0 right-0 h-0.5 ${
+                  tab.color === 'yellow' ? 'bg-yellow-500' :
+                  tab.color === 'purple' ? 'bg-purple-500' :
+                  'bg-blue-500'
+                }`}></div>
+              )}
+            </button>
+          ))}
         </div>
-        <div className="bg-purple-50 border border-purple-200 rounded-xl p-4 text-center">
-          <p className="text-3xl font-bold text-purple-600">{pendingHE.length}</p>
-          <p className="text-xs text-purple-700 mt-1">Horas Extra</p>
-        </div>
-        <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 text-center">
-          <p className="text-3xl font-bold text-blue-600">{openTickets.length}</p>
-          <p className="text-xs text-blue-700 mt-1">Chamados</p>
+
+        {/* Tab Content */}
+        <div className="p-6">
+          {/* Uniforms Tab */}
+          {activeTab === 'uniforms' && (
+            <div>
+              {pendingUniforms.length === 0 ? (
+                <div className="text-center py-12">
+                  <div className="text-6xl mb-4">✓</div>
+                  <p className="text-gray-500 text-lg font-medium">Nenhuma solicitação pendente</p>
+                  <p className="text-gray-400 text-sm mt-1">Todas as solicitações de uniforme foram processadas</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {pendingUniforms.map(req => (
+                    <div key={req.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition">
+                      <div className="flex items-center gap-3">
+                        <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-bold">
+                          {req.guardName.charAt(0)}
+                        </div>
+                        <div>
+                          <p className="font-semibold text-gray-800">{req.guardName}</p>
+                          <p className="text-sm text-gray-600">{req.itemName} • Tam: {req.size} • Qtd: {req.quantity}</p>
+                          <p className="text-xs text-gray-500 mt-0.5">Motivo: {req.reason}</p>
+                        </div>
+                      </div>
+                      <div className="flex gap-2">
+                        <button onClick={() => updateUniformRequestStatus(req.id, 'approved')} className="px-4 py-2 bg-green-500 text-white rounded-lg text-sm font-medium hover:bg-green-600 transition shadow-sm">
+                          ✓ Aprovar
+                        </button>
+                        <button onClick={() => updateUniformRequestStatus(req.id, 'rejected')} className="px-4 py-2 bg-red-500 text-white rounded-lg text-sm font-medium hover:bg-red-600 transition shadow-sm">
+                          ✗ Recusar
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Overtime Tab */}
+          {activeTab === 'overtime' && (
+            <div>
+              {pendingHE.length === 0 ? (
+                <div className="text-center py-12">
+                  <div className="text-6xl mb-4">✓</div>
+                  <p className="text-gray-500 text-lg font-medium">Nenhuma hora extra pendente</p>
+                  <p className="text-gray-400 text-sm mt-1">Todas as solicitações de HE foram processadas</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {pendingHE.map(ot => (
+                    <div key={ot.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition">
+                      <div className="flex items-center gap-3">
+                        <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center text-purple-600 font-bold">
+                          {ot.guardName.charAt(0)}
+                        </div>
+                        <div>
+                          <p className="font-semibold text-gray-800">{ot.guardName}</p>
+                          <p className="text-sm text-gray-600">{ot.date} • {ot.startTime} às {ot.endTime}</p>
+                          <p className="text-xs text-gray-500 mt-0.5">Motivo: {ot.reason}</p>
+                        </div>
+                      </div>
+                      <div className="flex gap-2">
+                        <button onClick={() => updateOvertimeStatus(ot.id, 'approved')} className="px-4 py-2 bg-green-500 text-white rounded-lg text-sm font-medium hover:bg-green-600 transition shadow-sm">
+                          ✓ Aprovar
+                        </button>
+                        <button onClick={() => updateOvertimeStatus(ot.id, 'rejected')} className="px-4 py-2 bg-red-500 text-white rounded-lg text-sm font-medium hover:bg-red-600 transition shadow-sm">
+                          ✗ Recusar
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Tickets Tab */}
+          {activeTab === 'tickets' && (
+            <div>
+              {openTickets.length === 0 ? (
+                <div className="text-center py-12">
+                  <div className="text-6xl mb-4">✓</div>
+                  <p className="text-gray-500 text-lg font-medium">Nenhum chamado aberto</p>
+                  <p className="text-gray-400 text-sm mt-1">Todos os chamados foram resolvidos</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {openTickets.map(t => (
+                    <div key={t.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition">
+                      <div className="flex items-center gap-3">
+                        <span className={`w-4 h-4 rounded-full ${
+                          t.priority === 'critical' ? 'bg-red-500' :
+                          t.priority === 'high' ? 'bg-orange-500' :
+                          t.priority === 'medium' ? 'bg-yellow-500' :
+                          'bg-gray-400'
+                        }`}></span>
+                        <div>
+                          <p className="font-semibold text-gray-800">{t.description}</p>
+                          <p className="text-sm text-gray-600">{t.guardName} • {t.postName}</p>
+                          <p className="text-xs text-gray-500 mt-0.5">Categoria: {t.category}</p>
+                        </div>
+                      </div>
+                      <div className="flex gap-2">
+                        <button onClick={() => updateTicketStatus(t.id, 'in_progress')} className="px-4 py-2 bg-yellow-500 text-white rounded-lg text-sm font-medium hover:bg-yellow-600 transition shadow-sm">
+                          Em Andamento
+                        </button>
+                        <button onClick={() => updateTicketStatus(t.id, 'resolved')} className="px-4 py-2 bg-green-500 text-white rounded-lg text-sm font-medium hover:bg-green-600 transition shadow-sm">
+                          Resolver
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
-
-      {/* Uniform Requests */}
-      {pendingUniforms.length > 0 && (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-          <div className="p-4 border-b border-gray-100 bg-yellow-50">
-            <h3 className="font-semibold text-gray-800">👔 Solicitações de Uniforme Pendentes</h3>
-          </div>
-          <div className="divide-y divide-gray-100">
-            {pendingUniforms.map(req => (
-              <div key={req.id} className="p-4 flex items-center justify-between hover:bg-gray-50">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-bold text-sm">
-                    {req.guardName.charAt(0)}
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-gray-800">{req.guardName}</p>
-                    <p className="text-xs text-gray-500">{req.itemName} • Tam: {req.size} • Qtd: {req.quantity}</p>
-                    <p className="text-xs text-gray-400">Motivo: {req.reason}</p>
-                  </div>
-                </div>
-                <div className="flex gap-2">
-                  <button onClick={() => updateUniformRequestStatus(req.id, 'approved')} className="px-3 py-1.5 bg-green-500 text-white rounded-lg text-xs font-medium hover:bg-green-600 transition">
-                    ✓ Aprovar
-                  </button>
-                  <button onClick={() => updateUniformRequestStatus(req.id, 'rejected')} className="px-3 py-1.5 bg-red-500 text-white rounded-lg text-xs font-medium hover:bg-red-600 transition">
-                    ✗ Recusar
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Overtime Requests */}
-      {pendingHE.length > 0 && (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-          <div className="p-4 border-b border-gray-100 bg-purple-50">
-            <h3 className="font-semibold text-gray-800">⏰ Horas Extra Pendentes</h3>
-          </div>
-          <div className="divide-y divide-gray-100">
-            {pendingHE.map(ot => (
-              <div key={ot.id} className="p-4 flex items-center justify-between hover:bg-gray-50">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center text-purple-600 font-bold text-sm">
-                    {ot.guardName.charAt(0)}
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-gray-800">{ot.guardName}</p>
-                    <p className="text-xs text-gray-500">{ot.date} • {ot.startTime} às {ot.endTime}</p>
-                    <p className="text-xs text-gray-400">Motivo: {ot.reason}</p>
-                  </div>
-                </div>
-                <div className="flex gap-2">
-                  <button onClick={() => updateOvertimeStatus(ot.id, 'approved')} className="px-3 py-1.5 bg-green-500 text-white rounded-lg text-xs font-medium hover:bg-green-600 transition">
-                    ✓ Aprovar
-                  </button>
-                  <button onClick={() => updateOvertimeStatus(ot.id, 'rejected')} className="px-3 py-1.5 bg-red-500 text-white rounded-lg text-xs font-medium hover:bg-red-600 transition">
-                    ✗ Recusar
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Open Tickets */}
-      {openTickets.length > 0 && (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-          <div className="p-4 border-b border-gray-100 bg-blue-50">
-            <h3 className="font-semibold text-gray-800">🔧 Chamados Abertos</h3>
-          </div>
-          <div className="divide-y divide-gray-100">
-            {openTickets.map(t => (
-              <div key={t.id} className="p-4 flex items-center justify-between hover:bg-gray-50">
-                <div className="flex items-center gap-3">
-                  <span className={`w-3 h-3 rounded-full ${t.priority === 'critical' ? 'bg-red-500' : t.priority === 'high' ? 'bg-orange-500' : t.priority === 'medium' ? 'bg-yellow-500' : 'bg-gray-400'}`}></span>
-                  <div>
-                    <p className="text-sm font-medium text-gray-800">{t.description}</p>
-                    <p className="text-xs text-gray-500">{t.guardName} • {t.postName} • {t.category}</p>
-                  </div>
-                </div>
-                <div className="flex gap-2">
-                  <button onClick={() => updateTicketStatus(t.id, 'in_progress')} className="px-3 py-1.5 bg-yellow-500 text-white rounded-lg text-xs font-medium hover:bg-yellow-600 transition">
-                    Em Andamento
-                  </button>
-                  <button onClick={() => updateTicketStatus(t.id, 'resolved')} className="px-3 py-1.5 bg-green-500 text-white rounded-lg text-xs font-medium hover:bg-green-600 transition">
-                    Resolver
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
     </div>
   );
 }

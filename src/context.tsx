@@ -29,6 +29,9 @@ interface AppState {
   updatePostStatus: (id: string, status: Post['status']) => void;
   allocateGuardToPost: (postId: string, guardId: string) => void;
   removeGuardFromPost: (postId: string, guardId: string) => void;
+  addPost: (post: Omit<Post, 'id' | 'status'>) => void;
+  removePost: (postId: string) => void;
+  updatePost: (postId: string, data: Partial<Post>) => void;
 }
 
 const AppContext = createContext<AppState | undefined>(undefined);
@@ -146,13 +149,36 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }));
   };
 
+  const addPost = (post: Omit<Post, 'id' | 'status'>) => {
+    const newPost: Post = {
+      ...post,
+      id: `p${Date.now()}`,
+      status: 'critical', // novo posto começa como crítico até ter vigilantes
+    };
+    setPosts(prev => [...prev, newPost]);
+    setPostAllocations(prev => ({ ...prev, [newPost.id]: [] }));
+  };
+
+  const removePost = (postId: string) => {
+    setPosts(prev => prev.filter(p => p.id !== postId));
+    setPostAllocations(prev => {
+      const newAllocations = { ...prev };
+      delete newAllocations[postId];
+      return newAllocations;
+    });
+  };
+
+  const updatePost = (postId: string, data: Partial<Post>) => {
+    setPosts(prev => prev.map(p => p.id === postId ? { ...p, ...data } : p));
+  };
+
   return (
     <AppContext.Provider value={{
       currentUser, posts, uniformItems, uniformRequests, tickets, coverages, overtimeRequests, notifications, postAllocations,
       login, logout, addUniformRequest, updateUniformRequestStatus, addTicket, updateTicketStatus,
       addCoverage, updateCoverageStatus, checkInCoverage, checkOutCoverage,
       addOvertimeRequest, updateOvertimeStatus, addNotification, markNotificationRead, updatePostStatus,
-      allocateGuardToPost, removeGuardFromPost,
+      allocateGuardToPost, removeGuardFromPost, addPost, removePost, updatePost,
     }}>
       {children}
     </AppContext.Provider>

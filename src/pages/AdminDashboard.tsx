@@ -301,9 +301,28 @@ function DashboardView() {
 }
 
 function PostsView() {
-  const { posts, postAllocations, allocateGuardToPost, removeGuardFromPost } = useApp();
+  const { posts, postAllocations, allocateGuardToPost, removeGuardFromPost, addPost, removePost, updatePost } = useApp();
   const [selectedPost, setSelectedPost] = useState<string | null>(null);
   const [showAllocateModal, setShowAllocateModal] = useState(false);
+  const [showNewPostModal, setShowNewPostModal] = useState(false);
+  const [editingPost, setEditingPost] = useState<string | null>(null);
+
+  // Estado do formulário de novo posto
+  const [newPost, setNewPost] = useState({
+    name: '',
+    address: '',
+    risk: 'medium' as 'low' | 'medium' | 'high',
+    requiredGuards: 1,
+    roundInterval: 60,
+    gpsCoords: { lat: 0, lng: 0 },
+  });
+
+  const handleCreatePost = () => {
+    if (!newPost.name || !newPost.address) return;
+    addPost(newPost);
+    setNewPost({ name: '', address: '', risk: 'medium', requiredGuards: 1, roundInterval: 60, gpsCoords: { lat: 0, lng: 0 } });
+    setShowNewPostModal(false);
+  };
 
   // Lista de todos os vigilantes
   const guards = [
@@ -331,7 +350,10 @@ function PostsView() {
           <h2 className="text-2xl font-bold text-gray-800">Gestão de Postos</h2>
           <p className="text-gray-500 text-sm">Cadastre postos e aloque vigilantes</p>
         </div>
-        <button className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition flex items-center gap-2">
+        <button
+          onClick={() => setShowNewPostModal(true)}
+          className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition flex items-center gap-2"
+        >
           <span>+</span> Novo Posto
         </button>
       </div>
@@ -372,12 +394,21 @@ function PostsView() {
               }`}
             >
               {/* Header do card */}
-              <div className={`p-4 text-white ${
+              <div className={`p-4 text-white relative ${
                 isEmpty ? 'bg-gradient-to-r from-red-500 to-red-600' :
                 isPartial ? 'bg-gradient-to-r from-yellow-500 to-orange-500' :
                 'bg-gradient-to-r from-green-500 to-emerald-500'
               }`}>
-                <div className="flex justify-between items-start">
+                <button
+                  onClick={(e) => { e.stopPropagation(); setEditingPost(post.id); }}
+                  className="absolute top-2 right-2 w-7 h-7 bg-white/20 hover:bg-white/30 rounded-full flex items-center justify-center transition"
+                  title="Editar posto"
+                >
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                  </svg>
+                </button>
+                <div className="flex justify-between items-start pr-8">
                   <div className="flex-1">
                     <h3 className="font-bold text-lg leading-tight">{post.name}</h3>
                     <p className="text-xs opacity-90 mt-1 flex items-center gap-1">
@@ -555,6 +586,311 @@ function PostsView() {
                 })}
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Novo Posto */}
+      {showNewPostModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4" onClick={() => setShowNewPostModal(false)}>
+          <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden animate-slide-up max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+            {/* Header */}
+            <div className="bg-gradient-to-r from-blue-600 to-indigo-600 p-5 text-white sticky top-0 z-10">
+              <div className="flex justify-between items-start">
+                <div>
+                  <p className="text-blue-100 text-xs font-medium uppercase tracking-wider">Cadastro</p>
+                  <h3 className="text-xl font-bold mt-1">Novo Posto de Serviço</h3>
+                  <p className="text-xs text-blue-200 mt-1">Preencha os dados do novo posto</p>
+                </div>
+                <button
+                  onClick={() => setShowNewPostModal(false)}
+                  className="w-8 h-8 bg-white/20 hover:bg-white/30 rounded-full flex items-center justify-center transition"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            {/* Formulário */}
+            <div className="p-5 space-y-4">
+              <div>
+                <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1.5 block">Nome do Posto *</label>
+                <input
+                  type="text"
+                  value={newPost.name}
+                  onChange={e => setNewPost({ ...newPost, name: e.target.value })}
+                  placeholder="Ex: Edifício Comercial ABC"
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1.5 block">Endereço Completo *</label>
+                <input
+                  type="text"
+                  value={newPost.address}
+                  onChange={e => setNewPost({ ...newPost, address: e.target.value })}
+                  placeholder="Ex: Rua das Flores, 123 - Bairro"
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1.5 block">Nível de Risco</label>
+                  <select
+                    value={newPost.risk}
+                    onChange={e => setNewPost({ ...newPost, risk: e.target.value as 'low' | 'medium' | 'high' })}
+                    className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+                  >
+                    <option value="low">🟢 Baixo</option>
+                    <option value="medium">🟡 Médio</option>
+                    <option value="high">🔴 Alto</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1.5 block">Vigilantes Necessários</label>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setNewPost({ ...newPost, requiredGuards: Math.max(1, newPost.requiredGuards - 1) })}
+                      className="w-10 h-10 bg-gray-100 hover:bg-gray-200 rounded-lg text-gray-700 font-bold text-lg transition"
+                    >
+                      −
+                    </button>
+                    <div className="flex-1 text-center bg-gray-50 rounded-lg py-2">
+                      <span className="text-xl font-bold text-gray-800">{newPost.requiredGuards}</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setNewPost({ ...newPost, requiredGuards: Math.min(10, newPost.requiredGuards + 1) })}
+                      className="w-10 h-10 bg-gray-100 hover:bg-gray-200 rounded-lg text-gray-700 font-bold text-lg transition"
+                    >
+                      +
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1.5 block">Intervalo de Ronda (minutos)</label>
+                <div className="grid grid-cols-4 gap-2">
+                  {[30, 60, 90, 120].map(min => (
+                    <button
+                      key={min}
+                      type="button"
+                      onClick={() => setNewPost({ ...newPost, roundInterval: min })}
+                      className={`py-2.5 rounded-lg text-sm font-semibold transition ${
+                        newPost.roundInterval === min
+                          ? 'bg-blue-600 text-white shadow-md'
+                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      }`}
+                    >
+                      {min}min
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1.5 block">Latitude</label>
+                  <input
+                    type="number"
+                    step="0.0001"
+                    value={newPost.gpsCoords.lat || ''}
+                    onChange={e => setNewPost({ ...newPost, gpsCoords: { ...newPost.gpsCoords, lat: parseFloat(e.target.value) || 0 } })}
+                    placeholder="-23.5614"
+                    className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1.5 block">Longitude</label>
+                  <input
+                    type="number"
+                    step="0.0001"
+                    value={newPost.gpsCoords.lng || ''}
+                    onChange={e => setNewPost({ ...newPost, gpsCoords: { ...newPost.gpsCoords, lng: parseFloat(e.target.value) || 0 } })}
+                    placeholder="-46.6558"
+                    className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+                  />
+                </div>
+              </div>
+              <p className="text-[10px] text-gray-400 -mt-2">💡 Coordenadas opcionais - usadas para geolocalização do check-in</p>
+
+              {/* Preview */}
+              {newPost.name && newPost.address && (
+                <div className="bg-blue-50 border border-blue-200 rounded-xl p-3">
+                  <p className="text-xs text-blue-600 font-medium mb-1">Pré-visualização:</p>
+                  <p className="text-sm font-semibold text-blue-800">{newPost.name}</p>
+                  <p className="text-xs text-blue-600">{newPost.address}</p>
+                  <div className="flex gap-3 mt-2 text-xs">
+                    <span className="text-blue-700">Risco: <strong>{newPost.risk === 'high' ? 'Alto' : newPost.risk === 'medium' ? 'Médio' : 'Baixo'}</strong></span>
+                    <span className="text-blue-700">Vigilantes: <strong>{newPost.requiredGuards}</strong></span>
+                    <span className="text-blue-700">Ronda: <strong>{newPost.roundInterval}min</strong></span>
+                  </div>
+                </div>
+              )}
+
+              <div className="flex gap-3 pt-2">
+                <button
+                  onClick={() => setShowNewPostModal(false)}
+                  className="flex-1 py-3 border-2 border-gray-200 text-gray-500 rounded-xl font-medium text-sm hover:bg-gray-50 transition"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleCreatePost}
+                  disabled={!newPost.name || !newPost.address}
+                  className="flex-[2] py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl font-semibold text-sm shadow-lg shadow-blue-500/30 hover:shadow-blue-500/50 active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none"
+                >
+                  ✓ Cadastrar Posto
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Edição de Posto */}
+      {editingPost && (() => {
+        const post = posts.find(p => p.id === editingPost);
+        if (!post) return null;
+        return (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4" onClick={() => setEditingPost(null)}>
+            <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden animate-slide-up max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+              <div className="bg-gradient-to-r from-orange-500 to-amber-500 p-5 text-white sticky top-0 z-10">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <p className="text-orange-100 text-xs font-medium uppercase tracking-wider">Editar</p>
+                    <h3 className="text-xl font-bold mt-1">{post.name}</h3>
+                  </div>
+                  <button
+                    onClick={() => setEditingPost(null)}
+                    className="w-8 h-8 bg-white/20 hover:bg-white/30 rounded-full flex items-center justify-center transition"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+              <EditPostForm
+                post={post}
+                onSave={(data) => { updatePost(post.id, data); setEditingPost(null); }}
+                onDelete={() => { removePost(post.id); setEditingPost(null); }}
+                onCancel={() => setEditingPost(null)}
+              />
+            </div>
+          </div>
+        );
+      })()}
+    </div>
+  );
+}
+
+/* Componente auxiliar para edição de posto */
+function EditPostForm({ post, onSave, onDelete, onCancel }: {
+  post: any;
+  onSave: (data: any) => void;
+  onDelete: () => void;
+  onCancel: () => void;
+}) {
+  const [name, setName] = useState(post.name);
+  const [address, setAddress] = useState(post.address);
+  const [risk, setRisk] = useState(post.risk);
+  const [requiredGuards, setRequiredGuards] = useState(post.requiredGuards);
+  const [roundInterval, setRoundInterval] = useState(post.roundInterval);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+
+  return (
+    <div className="p-5 space-y-4">
+      <div>
+        <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1.5 block">Nome do Posto</label>
+        <input
+          type="text"
+          value={name}
+          onChange={e => setName(e.target.value)}
+          className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400"
+        />
+      </div>
+      <div>
+        <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1.5 block">Endereço</label>
+        <input
+          type="text"
+          value={address}
+          onChange={e => setAddress(e.target.value)}
+          className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400"
+        />
+      </div>
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1.5 block">Nível de Risco</label>
+          <select
+            value={risk}
+            onChange={e => setRisk(e.target.value)}
+            className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400"
+          >
+            <option value="low">🟢 Baixo</option>
+            <option value="medium">🟡 Médio</option>
+            <option value="high">🔴 Alto</option>
+          </select>
+        </div>
+        <div>
+          <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1.5 block">Vigilantes</label>
+          <div className="flex items-center gap-2">
+            <button type="button" onClick={() => setRequiredGuards(Math.max(1, requiredGuards - 1))} className="w-10 h-10 bg-gray-100 hover:bg-gray-200 rounded-lg font-bold">−</button>
+            <div className="flex-1 text-center bg-gray-50 rounded-lg py-2"><span className="text-xl font-bold">{requiredGuards}</span></div>
+            <button type="button" onClick={() => setRequiredGuards(Math.min(10, requiredGuards + 1))} className="w-10 h-10 bg-gray-100 hover:bg-gray-200 rounded-lg font-bold">+</button>
+          </div>
+        </div>
+      </div>
+      <div>
+        <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1.5 block">Intervalo de Ronda (min)</label>
+        <div className="grid grid-cols-4 gap-2">
+          {[30, 60, 90, 120].map(min => (
+            <button
+              key={min}
+              type="button"
+              onClick={() => setRoundInterval(min)}
+              className={`py-2.5 rounded-lg text-sm font-semibold transition ${
+                roundInterval === min ? 'bg-orange-500 text-white shadow-md' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+            >
+              {min}min
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {!confirmDelete ? (
+        <div className="flex gap-3 pt-2">
+          <button
+            onClick={() => setConfirmDelete(true)}
+            className="py-3 px-4 border-2 border-red-200 text-red-500 rounded-xl font-medium text-sm hover:bg-red-50 transition"
+          >
+            🗑️ Excluir
+          </button>
+          <button onClick={onCancel} className="flex-1 py-3 border-2 border-gray-200 text-gray-500 rounded-xl font-medium text-sm hover:bg-gray-50 transition">
+            Cancelar
+          </button>
+          <button
+            onClick={() => onSave({ name, address, risk, requiredGuards, roundInterval })}
+            disabled={!name || !address}
+            className="flex-[2] py-3 bg-gradient-to-r from-orange-500 to-amber-500 text-white rounded-xl font-semibold text-sm shadow-lg active:scale-[0.98] transition-all disabled:opacity-50"
+          >
+            ✓ Salvar
+          </button>
+        </div>
+      ) : (
+        <div className="bg-red-50 border border-red-200 rounded-xl p-4">
+          <p className="text-sm text-red-700 font-medium mb-2">⚠️ Confirmar exclusão do posto "{post.name}"?</p>
+          <div className="flex gap-2">
+            <button onClick={() => setConfirmDelete(false)} className="flex-1 py-2 bg-white border border-gray-200 rounded-lg text-sm">Cancelar</button>
+            <button onClick={onDelete} className="flex-1 py-2 bg-red-500 text-white rounded-lg text-sm font-medium hover:bg-red-600">Confirmar Exclusão</button>
           </div>
         </div>
       )}

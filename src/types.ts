@@ -8,6 +8,12 @@ export interface User {
   phone: string;
   photo?: string;
   posto?: string;
+  escala?: {
+    turno: 'diurno' | 'noturno';
+    entrada: string;
+    saida: string;
+    intervalo?: string;
+  };
 }
 
 export interface Post {

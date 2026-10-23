@@ -1,10 +1,42 @@
 import { Post, UniformItem, UniformRequest, Ticket, Coverage, OvertimeRequest, Notification, User } from './types';
 
 export const users: User[] = [
-  { id: '1', name: 'Carlos Silva', matricula: 'V001', role: 'guard', phone: '(11) 99999-0001', posto: 'Edifício Central' },
-  { id: '2', name: 'João Santos', matricula: 'V002', role: 'guard', phone: '(11) 99999-0002', posto: 'Condomínio Parque Sul' },
-  { id: '3', name: 'Pedro Oliveira', matricula: 'V003', role: 'guard', phone: '(11) 99999-0003', posto: 'Depósito Industrial' },
-  { id: '4', name: 'Roberto Lima', matricula: 'V004', role: 'guard', phone: '(11) 99999-0004', posto: 'Shopping Center Norte' },
+  { 
+    id: '1', 
+    name: 'Carlos Silva', 
+    matricula: 'V001', 
+    role: 'guard', 
+    phone: '(11) 99999-0001', 
+    posto: 'Edifício Central',
+    escala: { turno: 'diurno', entrada: '07:00', saida: '19:00', intervalo: '12:00 às 13:00' }
+  },
+  { 
+    id: '2', 
+    name: 'João Santos', 
+    matricula: 'V002', 
+    role: 'guard', 
+    phone: '(11) 99999-0002', 
+    posto: 'Condomínio Parque Sul',
+    escala: { turno: 'noturno', entrada: '19:00', saida: '07:00', intervalo: '00:00 às 01:00' }
+  },
+  { 
+    id: '3', 
+    name: 'Pedro Oliveira', 
+    matricula: 'V003', 
+    role: 'guard', 
+    phone: '(11) 99999-0003', 
+    posto: 'Depósito Industrial',
+    escala: { turno: 'diurno', entrada: '07:00', saida: '19:00', intervalo: '12:00 às 13:00' }
+  },
+  { 
+    id: '4', 
+    name: 'Roberto Lima', 
+    matricula: 'V004', 
+    role: 'guard', 
+    phone: '(11) 99999-0004', 
+    posto: 'Shopping Center Norte',
+    escala: { turno: 'noturno', entrada: '19:00', saida: '07:00', intervalo: '00:00 às 01:00' }
+  },
   { id: '5', name: 'Supervisor Admin', matricula: 'ADM01', role: 'admin', phone: '(11) 99999-0099' },
 ];
 

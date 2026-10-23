@@ -135,6 +135,7 @@ export default function GuardPortal() {
 
 /* ==================== PONTO ELETRÔNICO - TELA CHEIA ==================== */
 function PontoTab() {
+  const { currentUser } = useApp();
   const [timeRecords, setTimeRecords] = useState<TimeRecords>(() => {
     const saved = localStorage.getItem('ponto_records');
     return saved ? JSON.parse(saved) : {};
@@ -158,6 +159,9 @@ function PontoTab() {
   for (let d = startDay; d <= lastDay; d++) {
     days.push(d);
   }
+
+  // Escala do vigilante
+  const escala = currentUser?.escala;
 
   const getDayOfWeek = (day: number): string => {
     const date = new Date(getYear(), new Date().getMonth(), day);
@@ -309,6 +313,35 @@ function PontoTab() {
           </p>
         </div>
       </div>
+
+      {/* Card de Escala do Vigilante */}
+      {escala && (
+        <div className="shrink-0 bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-blue-200 px-3 py-2.5">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-sm ${
+                escala.turno === 'diurno' ? 'bg-yellow-500' : 'bg-indigo-600'
+              }`}>
+                {escala.turno === 'diurno' ? '☀️' : '🌙'}
+              </div>
+              <div>
+                <p className="text-xs font-bold text-gray-800">
+                  Turno {escala.turno === 'diurno' ? 'Diurno' : 'Noturno'}
+                </p>
+                <p className="text-[10px] text-gray-600">
+                  {escala.entrada} às {escala.saida}
+                </p>
+              </div>
+            </div>
+            {escala.intervalo && (
+              <div className="text-right">
+                <p className="text-[10px] text-gray-500 font-medium">Intervalo</p>
+                <p className="text-xs font-semibold text-gray-700">{escala.intervalo}</p>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Cabeçalho da tabela */}
       <div className="shrink-0 bg-gray-800 text-white grid grid-cols-[28px_1fr_1fr_1fr_1fr_1fr_1fr] gap-0.5 px-1 py-1.5 text-[8px] font-semibold text-center border-b border-gray-700">

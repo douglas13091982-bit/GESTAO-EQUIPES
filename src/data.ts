@@ -16,6 +16,15 @@ export const posts: Post[] = [
   { id: 'p5', name: 'Shopping Center Norte', address: 'Av. Norte, 5000', gpsCoords: { lat: -23.5100, lng: -46.6100 }, risk: 'medium', requiredGuards: 3, roundInterval: 90, status: 'ok' },
 ];
 
+// Alocação de vigilantes por posto: postId -> array de user ids
+export const postAllocations: Record<string, string[]> = {
+  'p1': ['1', '2'], // Edifício Central: Carlos e João
+  'p2': ['3'],      // Condomínio Parque Sul: Pedro
+  'p3': ['4'],      // Depósito Industrial: Roberto (falta 1)
+  'p4': [],         // Escola Municipal: vazio (posto descoberto)
+  'p5': [],         // Shopping Center Norte: vazio (falta 3)
+};
+
 export const uniformItems: UniformItem[] = [
   { id: 'u1', name: 'Camisa Social Azul', category: 'Uniforme', stock: 45, blocked: false, sizes: ['P', 'M', 'G', 'GG'] },
   { id: 'u2', name: 'Calça Tática Preta', category: 'Uniforme', stock: 30, blocked: false, sizes: ['38', '40', '42', '44', '46'] },

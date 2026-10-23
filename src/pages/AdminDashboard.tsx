@@ -301,75 +301,263 @@ function DashboardView() {
 }
 
 function PostsView() {
-  const { posts } = useApp();
+  const { posts, postAllocations, allocateGuardToPost, removeGuardFromPost } = useApp();
+  const [selectedPost, setSelectedPost] = useState<string | null>(null);
+  const [showAllocateModal, setShowAllocateModal] = useState(false);
+
+  // Lista de todos os vigilantes
+  const guards = [
+    { id: '1', name: 'Carlos Silva', matricula: 'V001' },
+    { id: '2', name: 'João Santos', matricula: 'V002' },
+    { id: '3', name: 'Pedro Oliveira', matricula: 'V003' },
+    { id: '4', name: 'Roberto Lima', matricula: 'V004' },
+  ];
+
+  // Função para descobrir em qual posto um vigilante está alocado
+  const getGuardPost = (guardId: string): string | null => {
+    for (const [postId, guardIds] of Object.entries(postAllocations)) {
+      if (guardIds.includes(guardId)) return postId;
+    }
+    return null;
+  };
+
+  const selectedPostData = posts.find(p => p.id === selectedPost);
+  const selectedPostGuards = selectedPost ? (postAllocations[selectedPost] || []) : [];
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
           <h2 className="text-2xl font-bold text-gray-800">Gestão de Postos</h2>
-          <p className="text-gray-500 text-sm">Cadastre e gerencie os postos de serviço</p>
+          <p className="text-gray-500 text-sm">Cadastre postos e aloque vigilantes</p>
         </div>
         <button className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition flex items-center gap-2">
           <span>+</span> Novo Posto
         </button>
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead className="bg-gray-50 border-b border-gray-200">
-              <tr>
-                <th className="text-left px-4 py-3 font-medium text-gray-600">Posto</th>
-                <th className="text-left px-4 py-3 font-medium text-gray-600">Endereço</th>
-                <th className="text-center px-4 py-3 font-medium text-gray-600">Risco</th>
-                <th className="text-center px-4 py-3 font-medium text-gray-600">Vigilantes</th>
-                <th className="text-center px-4 py-3 font-medium text-gray-600">Ronda (min)</th>
-                <th className="text-center px-4 py-3 font-medium text-gray-600">Status</th>
-                <th className="text-center px-4 py-3 font-medium text-gray-600">Ações</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100">
-              {posts.map(post => (
-                <tr key={post.id} className="hover:bg-gray-50">
-                  <td className="px-4 py-3 font-medium text-gray-800">{post.name}</td>
-                  <td className="px-4 py-3 text-gray-600">{post.address}</td>
-                  <td className="px-4 py-3 text-center">
-                    <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
-                      post.risk === 'high' ? 'bg-red-100 text-red-700' :
-                      post.risk === 'medium' ? 'bg-yellow-100 text-yellow-700' :
-                      'bg-green-100 text-green-700'
-                    }`}>
-                      {post.risk === 'high' ? 'Alto' : post.risk === 'medium' ? 'Médio' : 'Baixo'}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-center text-gray-700">{post.requiredGuards}</td>
-                  <td className="px-4 py-3 text-center text-gray-700">{post.roundInterval}</td>
-                  <td className="px-4 py-3 text-center">
-                    <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium ${
-                      post.status === 'ok' ? 'bg-green-100 text-green-700' :
-                      post.status === 'warning' ? 'bg-yellow-100 text-yellow-700' :
-                      'bg-red-100 text-red-700'
-                    }`}>
-                      <span className={`w-1.5 h-1.5 rounded-full ${post.status === 'ok' ? 'bg-green-500' : post.status === 'warning' ? 'bg-yellow-500' : 'bg-red-500'}`}></span>
-                      {post.status === 'ok' ? 'OK' : post.status === 'warning' ? 'Alerta' : 'Crítico'}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-center">
-                    <div className="flex justify-center gap-1">
-                      <button className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded transition" title="Editar">
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
-                      </button>
-                      <button className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition" title="Excluir">
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+      {/* Resumo de status */}
+      <div className="grid grid-cols-3 gap-4">
+        <div className="bg-green-50 border border-green-200 rounded-xl p-4 text-center">
+          <p className="text-3xl font-bold text-green-700">{posts.filter(p => (postAllocations[p.id] || []).length >= p.requiredGuards).length}</p>
+          <p className="text-xs text-green-600 mt-1">Postos Completos</p>
+        </div>
+        <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4 text-center">
+          <p className="text-3xl font-bold text-yellow-700">{posts.filter(p => { const a = (postAllocations[p.id] || []).length; return a > 0 && a < p.requiredGuards; }).length}</p>
+          <p className="text-xs text-yellow-600 mt-1">Postos Incompletos</p>
+        </div>
+        <div className="bg-red-50 border border-red-200 rounded-xl p-4 text-center">
+          <p className="text-3xl font-bold text-red-700">{posts.filter(p => (postAllocations[p.id] || []).length === 0).length}</p>
+          <p className="text-xs text-red-600 mt-1">Postos Descobertos</p>
         </div>
       </div>
+
+      {/* Cards de Postos */}
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+        {posts.map(post => {
+          const allocatedGuards = postAllocations[post.id] || [];
+          const isComplete = allocatedGuards.length >= post.requiredGuards;
+          const isEmpty = allocatedGuards.length === 0;
+          const isPartial = !isEmpty && !isComplete;
+
+          return (
+            <div
+              key={post.id}
+              onClick={() => setSelectedPost(post.id === selectedPost ? null : post.id)}
+              className={`bg-white rounded-xl shadow-sm border-2 overflow-hidden cursor-pointer transition-all hover:shadow-md hover:scale-[1.01] active:scale-[0.99] ${
+                post.id === selectedPost ? 'border-blue-500 shadow-blue-100' :
+                isEmpty ? 'border-red-300' :
+                isPartial ? 'border-yellow-300' :
+                'border-green-300'
+              }`}
+            >
+              {/* Header do card */}
+              <div className={`p-4 text-white ${
+                isEmpty ? 'bg-gradient-to-r from-red-500 to-red-600' :
+                isPartial ? 'bg-gradient-to-r from-yellow-500 to-orange-500' :
+                'bg-gradient-to-r from-green-500 to-emerald-500'
+              }`}>
+                <div className="flex justify-between items-start">
+                  <div className="flex-1">
+                    <h3 className="font-bold text-lg leading-tight">{post.name}</h3>
+                    <p className="text-xs opacity-90 mt-1 flex items-center gap-1">
+                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                      </svg>
+                      {post.address}
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-2xl font-bold">{allocatedGuards.length}/{post.requiredGuards}</div>
+                    <div className="text-[10px] opacity-90">vigilantes</div>
+                  </div>
+                </div>
+
+                {/* Barra de progresso */}
+                <div className="mt-3 bg-white/20 rounded-full h-2 overflow-hidden">
+                  <div
+                    className="h-full bg-white rounded-full transition-all duration-500"
+                    style={{ width: `${Math.min(100, (allocatedGuards.length / post.requiredGuards) * 100)}%` }}
+                  ></div>
+                </div>
+              </div>
+
+              {/* Corpo do card */}
+              <div className="p-4">
+                {/* Info do posto */}
+                <div className="flex items-center justify-between text-xs mb-3 pb-3 border-b border-gray-100">
+                  <span className={`px-2 py-0.5 rounded-full font-medium ${
+                    post.risk === 'high' ? 'bg-red-100 text-red-700' :
+                    post.risk === 'medium' ? 'bg-yellow-100 text-yellow-700' :
+                    'bg-green-100 text-green-700'
+                  }`}>
+                    Risco {post.risk === 'high' ? 'Alto' : post.risk === 'medium' ? 'Médio' : 'Baixo'}
+                  </span>
+                  <span className="text-gray-500">Ronda: {post.roundInterval}min</span>
+                </div>
+
+                {/* Lista de vigilantes alocados */}
+                <div className="space-y-2">
+                  <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Vigilantes Alocados</p>
+                  {allocatedGuards.length === 0 ? (
+                    <div className="text-center py-4 bg-red-50 rounded-lg border border-dashed border-red-200">
+                      <p className="text-red-500 text-sm font-medium">⚠️ Posto descoberto</p>
+                      <p className="text-red-400 text-xs mt-1">Nenhum vigilante alocado</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-1.5">
+                      {allocatedGuards.map(guardId => {
+                        const guard = guards.find(g => g.id === guardId);
+                        if (!guard) return null;
+                        return (
+                          <div key={guardId} className="flex items-center justify-between bg-gray-50 rounded-lg px-3 py-2">
+                            <div className="flex items-center gap-2">
+                              <div className="w-7 h-7 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-bold text-xs">
+                                {guard.name.charAt(0)}
+                              </div>
+                              <div>
+                                <p className="text-sm font-medium text-gray-800">{guard.name}</p>
+                                <p className="text-[10px] text-gray-500">{guard.matricula}</p>
+                              </div>
+                            </div>
+                            <button
+                              onClick={(e) => { e.stopPropagation(); removeGuardFromPost(post.id, guardId); }}
+                              className="text-gray-400 hover:text-red-500 transition p-1"
+                              title="Remover vigilante"
+                            >
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                              </svg>
+                            </button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  {/* Botão para alocar mais */}
+                  {allocatedGuards.length < post.requiredGuards && (
+                    <button
+                      onClick={(e) => { e.stopPropagation(); setSelectedPost(post.id); setShowAllocateModal(true); }}
+                      className="w-full mt-2 py-2 border-2 border-dashed border-blue-300 text-blue-600 rounded-lg text-xs font-medium hover:bg-blue-50 hover:border-blue-400 transition flex items-center justify-center gap-1"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                      </svg>
+                      Alocar Vigilante ({post.requiredGuards - allocatedGuards.length} vaga{post.requiredGuards - allocatedGuards.length > 1 ? 's' : ''})
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Modal de Alocação */}
+      {showAllocateModal && selectedPostData && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4" onClick={() => setShowAllocateModal(false)}>
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden animate-slide-up" onClick={e => e.stopPropagation()}>
+            {/* Header */}
+            <div className="bg-gradient-to-r from-blue-600 to-indigo-600 p-5 text-white">
+              <div className="flex justify-between items-start">
+                <div>
+                  <p className="text-blue-100 text-xs font-medium uppercase tracking-wider">Alocar Vigilante</p>
+                  <h3 className="text-xl font-bold mt-1">{selectedPostData.name}</h3>
+                  <p className="text-xs text-blue-200 mt-1">
+                    Faltam {selectedPostData.requiredGuards - selectedPostGuards.length} vigilante{(selectedPostData.requiredGuards - selectedPostGuards.length) > 1 ? 's' : ''}
+                  </p>
+                </div>
+                <button
+                  onClick={() => setShowAllocateModal(false)}
+                  className="w-8 h-8 bg-white/20 hover:bg-white/30 rounded-full flex items-center justify-center transition"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            {/* Lista de vigilantes disponíveis */}
+            <div className="p-4 max-h-96 overflow-y-auto">
+              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Vigilantes Disponíveis</p>
+              <div className="space-y-2">
+                {guards.map(guard => {
+                  const currentPost = getGuardPost(guard.id);
+                  const isAllocatedHere = currentPost === selectedPost;
+                  const isAllocatedElsewhere = currentPost !== null && currentPost !== selectedPost;
+                  const otherPost = isAllocatedElsewhere ? posts.find(p => p.id === currentPost) : null;
+
+                  return (
+                    <div
+                      key={guard.id}
+                      className={`flex items-center justify-between p-3 rounded-lg border transition ${
+                        isAllocatedHere
+                          ? 'bg-green-50 border-green-200'
+                          : isAllocatedElsewhere
+                            ? 'bg-yellow-50 border-yellow-200'
+                            : 'bg-gray-50 border-gray-200 hover:bg-blue-50 hover:border-blue-200'
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm ${
+                          isAllocatedHere ? 'bg-green-100 text-green-600' :
+                          isAllocatedElsewhere ? 'bg-yellow-100 text-yellow-600' :
+                          'bg-gray-100 text-gray-600'
+                        }`}>
+                          {guard.name.charAt(0)}
+                        </div>
+                        <div>
+                          <p className="text-sm font-semibold text-gray-800">{guard.name}</p>
+                          <p className="text-xs text-gray-500">{guard.matricula}</p>
+                          {isAllocatedHere && <p className="text-[10px] text-green-600 font-medium">✓ Já alocado aqui</p>}
+                          {isAllocatedElsewhere && <p className="text-[10px] text-yellow-600">📍 Em: {otherPost?.name}</p>}
+                          {!isAllocatedHere && !isAllocatedElsewhere && <p className="text-[10px] text-gray-400">Sem posto atribuído</p>}
+                        </div>
+                      </div>
+                      {!isAllocatedHere && (
+                        <button
+                          onClick={() => {
+                            allocateGuardToPost(selectedPost!, guard.id);
+                            if (selectedPostGuards.length + 1 >= selectedPostData.requiredGuards) {
+                              setShowAllocateModal(false);
+                            }
+                          }}
+                          className="px-3 py-1.5 bg-blue-600 text-white rounded-lg text-xs font-medium hover:bg-blue-700 transition active:scale-95"
+                        >
+                          {isAllocatedElsewhere ? 'Transferir' : 'Alocar'}
+                        </button>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

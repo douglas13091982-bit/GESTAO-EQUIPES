@@ -11,6 +11,7 @@ interface AppState {
   coverages: Coverage[];
   overtimeRequests: OvertimeRequest[];
   notifications: Notification[];
+  postAllocations: Record<string, string[]>;
   login: (matricula: string, password: string) => boolean;
   logout: () => void;
   addUniformRequest: (req: Omit<UniformRequest, 'id' | 'status' | 'date' | 'guardName'>) => void;
@@ -26,6 +27,8 @@ interface AppState {
   addNotification: (notif: Omit<Notification, 'id' | 'date' | 'read'>) => void;
   markNotificationRead: (id: string) => void;
   updatePostStatus: (id: string, status: Post['status']) => void;
+  allocateGuardToPost: (postId: string, guardId: string) => void;
+  removeGuardFromPost: (postId: string, guardId: string) => void;
 }
 
 const AppContext = createContext<AppState | undefined>(undefined);
@@ -39,6 +42,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [coverages, setCoverages] = useState<Coverage[]>(data.coverages);
   const [overtimeRequests, setOvertimeRequests] = useState<OvertimeRequest[]>(data.overtimeRequests);
   const [notifications, setNotifications] = useState<Notification[]>(data.notifications);
+  const [postAllocations, setPostAllocations] = useState<Record<string, string[]>>(data.postAllocations);
 
   const login = (matricula: string, _password: string): boolean => {
     const user = data.users.find(u => u.matricula === matricula);
@@ -122,12 +126,33 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setPosts(prev => prev.map(p => p.id === id ? { ...p, status } : p));
   };
 
+  const allocateGuardToPost = (postId: string, guardId: string) => {
+    setPostAllocations(prev => {
+      const current = prev[postId] || [];
+      // Remove guard from any other post first
+      const newAllocations: Record<string, string[]> = {};
+      Object.entries(prev).forEach(([pid, guards]) => {
+        newAllocations[pid] = guards.filter(g => g !== guardId);
+      });
+      newAllocations[postId] = [...(newAllocations[postId] || []), guardId];
+      return newAllocations;
+    });
+  };
+
+  const removeGuardFromPost = (postId: string, guardId: string) => {
+    setPostAllocations(prev => ({
+      ...prev,
+      [postId]: (prev[postId] || []).filter(g => g !== guardId),
+    }));
+  };
+
   return (
     <AppContext.Provider value={{
-      currentUser, posts, uniformItems, uniformRequests, tickets, coverages, overtimeRequests, notifications,
+      currentUser, posts, uniformItems, uniformRequests, tickets, coverages, overtimeRequests, notifications, postAllocations,
       login, logout, addUniformRequest, updateUniformRequestStatus, addTicket, updateTicketStatus,
       addCoverage, updateCoverageStatus, checkInCoverage, checkOutCoverage,
       addOvertimeRequest, updateOvertimeStatus, addNotification, markNotificationRead, updatePostStatus,
+      allocateGuardToPost, removeGuardFromPost,
     }}>
       {children}
     </AppContext.Provider>

@@ -996,16 +996,50 @@ function UniformsView() {
 
 function ApprovalsView() {
   const { uniformRequests, overtimeRequests, tickets, updateUniformRequestStatus, updateOvertimeStatus, updateTicketStatus } = useApp();
-  const [activeTab, setActiveTab] = useState<'uniforms' | 'overtime' | 'tickets'>('uniforms');
+  const [activeTab, setActiveTab] = useState<'uniforms' | 'overtime' | 'tickets' | 'justifications'>('uniforms');
   
   const pendingUniforms = uniformRequests.filter(r => r.status === 'pending');
   const pendingHE = overtimeRequests.filter(o => o.status === 'pending');
   const openTickets = tickets.filter(t => t.status === 'open');
+  
+  // Buscar todas as justificativas pendentes do localStorage
+  const getPendingJustifications = () => {
+    const saved = localStorage.getItem('ponto_records');
+    if (!saved) return [];
+    
+    const records = JSON.parse(saved);
+    const justifications: Array<{
+      day: number;
+      field: string;
+      motivo: string;
+      guardName: string;
+    }> = [];
+    
+    Object.entries(records).forEach(([dayStr, record]: [string, any]) => {
+      if (record.justificativas) {
+        Object.entries(record.justificativas).forEach(([field, just]: [string, any]) => {
+          if (just.status === 'pending') {
+            justifications.push({
+              day: parseInt(dayStr),
+              field,
+              motivo: just.motivo,
+              guardName: 'Vigilante' // Em produção, buscar do usuário logado
+            });
+          }
+        });
+      }
+    });
+    
+    return justifications;
+  };
+  
+  const pendingJustifications = getPendingJustifications();
 
   const tabs = [
     { id: 'uniforms' as const, label: 'Uniformes', count: pendingUniforms.length, icon: '👔', color: 'yellow' },
     { id: 'overtime' as const, label: 'Horas Extra', count: pendingHE.length, icon: '⏰', color: 'purple' },
     { id: 'tickets' as const, label: 'Chamados', count: openTickets.length, icon: '🔧', color: 'blue' },
+    { id: 'justifications' as const, label: 'Justificativas', count: pendingJustifications.length, icon: '📝', color: 'orange' },
   ];
 
   return (
@@ -1162,6 +1196,72 @@ function ApprovalsView() {
                         </button>
                         <button onClick={() => updateTicketStatus(t.id, 'resolved')} className="px-4 py-2 bg-green-500 text-white rounded-lg text-sm font-medium hover:bg-green-600 transition shadow-sm">
                           Resolver
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Justifications Tab */}
+          {activeTab === 'justifications' && (
+            <div>
+              {pendingJustifications.length === 0 ? (
+                <div className="text-center py-12">
+                  <div className="text-6xl mb-4">✓</div>
+                  <p className="text-gray-500 text-lg font-medium">Nenhuma justificativa pendente</p>
+                  <p className="text-gray-400 text-sm mt-1">Todas as justificativas foram processadas</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {pendingJustifications.map((just, idx) => (
+                    <div key={idx} className="flex items-center justify-between p-4 bg-orange-50 border-2 border-orange-200 rounded-lg">
+                      <div className="flex items-center gap-3">
+                        <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center text-orange-600 font-bold">
+                          ⚠️
+                        </div>
+                        <div>
+                          <p className="font-semibold text-gray-800">Dia {String(just.day).padStart(2, '0')} - {just.field}</p>
+                          <p className="text-sm text-gray-600 mt-1">
+                            <span className="font-medium">Motivo:</span> {just.motivo}
+                          </p>
+                          <p className="text-xs text-orange-600 mt-1">Status: Pendente de aprovação</p>
+                        </div>
+                      </div>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => {
+                            const saved = localStorage.getItem('ponto_records');
+                            if (saved) {
+                              const records = JSON.parse(saved);
+                              if (records[just.day]?.justificativas?.[just.field]) {
+                                records[just.day].justificativas[just.field].status = 'approved';
+                                localStorage.setItem('ponto_records', JSON.stringify(records));
+                                window.location.reload();
+                              }
+                            }
+                          }}
+                          className="px-4 py-2 bg-green-500 text-white rounded-lg text-sm font-medium hover:bg-green-600 transition shadow-sm"
+                        >
+                          ✓ Aprovar
+                        </button>
+                        <button
+                          onClick={() => {
+                            const saved = localStorage.getItem('ponto_records');
+                            if (saved) {
+                              const records = JSON.parse(saved);
+                              if (records[just.day]?.justificativas?.[just.field]) {
+                                records[just.day].justificativas[just.field].status = 'rejected';
+                                localStorage.setItem('ponto_records', JSON.stringify(records));
+                                window.location.reload();
+                              }
+                            }
+                          }}
+                          className="px-4 py-2 bg-red-500 text-white rounded-lg text-sm font-medium hover:bg-red-600 transition shadow-sm"
+                        >
+                          ✗ Rejeitar
                         </button>
                       </div>
                     </div>

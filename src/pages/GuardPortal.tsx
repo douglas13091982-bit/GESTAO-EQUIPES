@@ -12,7 +12,17 @@ interface TimeRecord {
   saida2: string;
   entradaHE: string;
   saidaHE: string;
+  justificativas?: Record<string, { motivo: string; status: 'pending' | 'approved' | 'rejected' }>;
 }
+
+// Horários padrão de trabalho
+const WORK_SCHEDULES = {
+  day: { start: '07:00', end: '19:00' }, // Turno diurno
+  night: { start: '19:00', end: '07:00' }, // Turno noturno
+};
+
+// Tolerância em minutos para considerar "fora do horário"
+const TOLERANCE_MINUTES = 15;
 
 type TimeRecords = Record<string, TimeRecord>;
 
@@ -130,6 +140,7 @@ function PontoTab() {
     return saved ? JSON.parse(saved) : {};
   });
   const [clockModal, setClockModal] = useState<{ day: number; field: keyof TimeRecord } | null>(null);
+  const [justificationModal, setJustificationModal] = useState<{ day: number; field: keyof TimeRecord } | null>(null);
   const [currentTime, setCurrentTime] = useState(new Date());
 
   useEffect(() => {
@@ -163,8 +174,68 @@ function PontoTab() {
     return date.getDay() === 0;
   };
 
+  // Função para verificar se horário está fora do estipulado
+  const isOutOfSchedule = (day: number, time: string, field: keyof TimeRecord): boolean => {
+    if (!time) return false;
+    
+    const [hours, minutes] = time.split(':').map(Number);
+    const timeInMinutes = hours * 60 + minutes;
+    
+    // Determina qual turno baseado no primeiro registro do dia
+    const key = `${day}`;
+    const record = timeRecords[key];
+    const isFirstEntry = field === 'entrada1';
+    
+    // Se é a primeira entrada, verifica se está próximo do início do turno
+    if (isFirstEntry) {
+      // Verifica se é turno diurno ou noturno baseado no horário
+      const isDayShift = timeInMinutes >= 5 * 60 && timeInMinutes <= 12 * 60; // 05:00 - 12:00
+      const schedule = isDayShift ? WORK_SCHEDULES.day : WORK_SCHEDULES.night;
+      
+      const [startH, startM] = schedule.start.split(':').map(Number);
+      const startInMinutes = startH * 60 + startM;
+      
+      const diff = Math.abs(timeInMinutes - startInMinutes);
+      return diff > TOLERANCE_MINUTES;
+    }
+    
+    return false;
+  };
+
+  // Função para verificar se campo tem justificativa pendente
+  const hasPendingJustification = (day: number, field: keyof TimeRecord): boolean => {
+    const key = `${day}`;
+    const record = timeRecords[key];
+    if (!record?.justificativas) return false;
+    const justification = record.justificativas[field];
+    return justification?.status === 'pending';
+  };
+
   const handleFieldClick = (day: number, field: keyof TimeRecord) => {
-    setClockModal({ day, field });
+    const key = `${day}`;
+    const record = timeRecords[key];
+    
+    // Se o campo está vazio, abre modal de justificativa
+    if (!record || !record[field]) {
+      setJustificationModal({ day, field });
+    } else {
+      setClockModal({ day, field });
+    }
+  };
+
+  const handleSaveJustification = (day: number, field: keyof TimeRecord, motivo: string) => {
+    const key = `${day}`;
+    setTimeRecords(prev => ({
+      ...prev,
+      [key]: {
+        ...(prev[key] || { entrada1: '', saida1: '', entrada2: '', saida2: '', entradaHE: '', saidaHE: '' }),
+        justificativas: {
+          ...(prev[key]?.justificativas || {}),
+          [field]: { motivo, status: 'pending' }
+        }
+      }
+    }));
+    setJustificationModal(null);
   };
 
   const handleSetTime = (time: string) => {
@@ -203,6 +274,8 @@ function PontoTab() {
       case 'saida2': return 'Saída';
       case 'entradaHE': return 'Entrada HE';
       case 'saidaHE': return 'Saída HE';
+      case 'justificativas': return 'Justificativas';
+      default: return '';
     }
   };
 
@@ -214,6 +287,8 @@ function PontoTab() {
       case 'saida2': return 4;
       case 'entradaHE': return 5;
       case 'saidaHE': return 6;
+      case 'justificativas': return 7;
+      default: return 0;
     }
   };
 
@@ -276,38 +351,53 @@ function PontoTab() {
                 </div>
 
                 {/* Campos de horário normais */}
-                {(['entrada1', 'saida1', 'entrada2', 'saida2'] as const).map((field) => (
-                  <button
-                    key={field}
-                    onClick={() => handleFieldClick(day, field)}
-                    className={`py-1.5 px-0.5 rounded text-center font-mono text-[10px] transition-all active:scale-95 ${
-                      record[field]
-                        ? 'bg-blue-100 text-blue-800 border border-blue-200'
-                        : today
-                          ? 'bg-yellow-100 text-yellow-700 border border-yellow-200 border-dashed'
-                          : 'bg-gray-50 text-gray-400 border border-gray-200 border-dashed'
-                    }`}
-                  >
-                    {record[field] || '--:--'}
-                  </button>
-                ))}
+                {(['entrada1', 'saida1', 'entrada2', 'saida2'] as const).map((field) => {
+                  const isJustified = hasPendingJustification(day, field);
+                  const isOutOfTime = record[field] && isOutOfSchedule(day, record[field], field);
+                  
+                  return (
+                    <button
+                      key={field}
+                      onClick={() => handleFieldClick(day, field)}
+                      className={`py-1.5 px-0.5 rounded text-center font-mono text-[10px] transition-all active:scale-95 ${
+                        isJustified
+                          ? 'bg-orange-200 text-orange-900 border-2 border-orange-400'
+                          : record[field]
+                            ? isOutOfTime
+                              ? 'bg-blue-100 text-blue-800 border-2 border-orange-500'
+                              : 'bg-blue-100 text-blue-800 border border-blue-200'
+                            : today
+                              ? 'bg-yellow-100 text-yellow-700 border border-yellow-200 border-dashed'
+                              : 'bg-gray-50 text-gray-400 border border-gray-200 border-dashed'
+                      }`}
+                    >
+                      {record[field] || (isJustified ? '⚠' : '--:--')}
+                    </button>
+                  );
+                })}
 
                 {/* Campos de Horas Extras */}
-                {(['entradaHE', 'saidaHE'] as const).map((field) => (
-                  <button
-                    key={field}
-                    onClick={() => handleFieldClick(day, field)}
-                    className={`py-1.5 px-0.5 rounded text-center font-mono text-[10px] transition-all active:scale-95 ${
-                      record[field]
-                        ? 'bg-orange-100 text-orange-800 border border-orange-200'
-                        : today
-                          ? 'bg-yellow-50 text-orange-400 border border-orange-200 border-dashed'
-                          : 'bg-orange-50/50 text-orange-300 border border-orange-200/50 border-dashed'
-                    }`}
-                  >
-                    {record[field] || '--:--'}
-                  </button>
-                ))}
+                {(['entradaHE', 'saidaHE'] as const).map((field) => {
+                  const isJustified = hasPendingJustification(day, field);
+                  
+                  return (
+                    <button
+                      key={field}
+                      onClick={() => handleFieldClick(day, field)}
+                      className={`py-1.5 px-0.5 rounded text-center font-mono text-[10px] transition-all active:scale-95 ${
+                        isJustified
+                          ? 'bg-orange-200 text-orange-900 border-2 border-orange-400'
+                          : record[field]
+                            ? 'bg-orange-100 text-orange-800 border border-orange-200'
+                            : today
+                              ? 'bg-yellow-50 text-orange-400 border border-orange-200 border-dashed'
+                              : 'bg-orange-50/50 text-orange-300 border border-orange-200/50 border-dashed'
+                      }`}
+                    >
+                      {record[field] || (isJustified ? '⚠' : '--:--')}
+                    </button>
+                  );
+                })}
               </div>
             );
           })}
@@ -325,6 +415,17 @@ function PontoTab() {
           onSet={handleSetTime}
           onClear={handleClearField}
           onClose={() => setClockModal(null)}
+        />
+      )}
+
+      {/* Modal de Justificativa */}
+      {justificationModal && (
+        <JustificationModal
+          day={justificationModal.day}
+          field={justificationModal.field}
+          fieldLabel={getFieldLabel(justificationModal.field)}
+          onSave={handleSaveJustification}
+          onClose={() => setJustificationModal(null)}
         />
       )}
     </div>
@@ -666,6 +767,132 @@ function ClockModal({
               className="flex-[2] py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl font-semibold text-sm shadow-lg shadow-indigo-500/30 hover:shadow-indigo-500/50 active:scale-[0.98] transition-all"
             >
               ✓ Confirmar Registro
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ==================== JUSTIFICATION MODAL ==================== */
+function JustificationModal({
+  day,
+  field,
+  fieldLabel,
+  onSave,
+  onClose,
+}: {
+  day: number;
+  field: keyof TimeRecord;
+  fieldLabel: string;
+  onSave: (day: number, field: keyof TimeRecord, motivo: string) => void;
+  onClose: () => void;
+}) {
+  const [motivo, setMotivo] = useState('');
+  const [customMotivo, setCustomMotivo] = useState('');
+  const [useCustom, setUseCustom] = useState(false);
+
+  const justificationReasons = [
+    'Esqueci de bater o ponto',
+    'Problema técnico no sistema',
+    'Fui chamado para emergência',
+    'Estava em atendimento externo',
+    'Problema de saúde',
+    'Outro motivo'
+  ];
+
+  const dayOfWeek = WEEKDAYS[new Date(getYear(), new Date().getMonth(), day).getDay()];
+  const selectedReason = useCustom ? customMotivo : motivo;
+
+  const handleConfirm = () => {
+    if (!selectedReason.trim()) return;
+    onSave(day, field, selectedReason);
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 backdrop-blur-sm" onClick={onClose}>
+      <div className="bg-white w-full max-w-sm rounded-t-3xl sm:rounded-3xl shadow-2xl overflow-hidden animate-slide-up" onClick={e => e.stopPropagation()}>
+        {/* Header */}
+        <div className="bg-gradient-to-r from-orange-500 to-amber-500 p-5 text-white text-center">
+          <p className="text-orange-100 text-xs font-medium uppercase tracking-wider">Justificar Horário</p>
+          <p className="text-xl font-bold mt-1">
+            {String(day).padStart(2, '0')}/{String(new Date().getMonth() + 1).padStart(2, '0')} - {dayOfWeek}
+          </p>
+          <div className="mt-2 inline-flex items-center gap-2 bg-white/20 rounded-full px-4 py-1.5">
+            <span className="text-sm">⚠️</span>
+            <span className="font-semibold text-sm">{fieldLabel}</span>
+          </div>
+        </div>
+
+        {/* Content */}
+        <div className="p-5">
+          <p className="text-sm text-gray-600 mb-4">
+            Selecione o motivo da justificativa. Após enviar, ficará pendente de aprovação do supervisor.
+          </p>
+
+          {/* Lista de motivos */}
+          <div className="space-y-2 mb-4">
+            {justificationReasons.slice(0, -1).map((reason, idx) => (
+              <button
+                key={idx}
+                onClick={() => { setMotivo(reason); setUseCustom(false); }}
+                className={`w-full text-left p-3 rounded-lg border-2 transition ${
+                  !useCustom && motivo === reason
+                    ? 'border-orange-500 bg-orange-50 text-orange-800'
+                    : 'border-gray-200 hover:border-orange-300 text-gray-700'
+                }`}
+              >
+                <span className="text-sm font-medium">{reason}</span>
+              </button>
+            ))}
+            
+            {/* Opção "Outro motivo" */}
+            <button
+              onClick={() => setUseCustom(true)}
+              className={`w-full text-left p-3 rounded-lg border-2 transition ${
+                useCustom
+                  ? 'border-orange-500 bg-orange-50'
+                  : 'border-gray-200 hover:border-orange-300'
+              }`}
+            >
+              <span className="text-sm font-medium text-gray-700">Outro motivo</span>
+            </button>
+          </div>
+
+          {/* Campo personalizado */}
+          {useCustom && (
+            <textarea
+              value={customMotivo}
+              onChange={e => setCustomMotivo(e.target.value)}
+              placeholder="Descreva o motivo..."
+              rows={3}
+              className="w-full border-2 border-orange-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-orange-500 mb-4"
+              autoFocus
+            />
+          )}
+
+          {/* Aviso */}
+          <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-4">
+            <p className="text-xs text-amber-700">
+              ⚠️ <strong>Atenção:</strong> Esta justificativa ficará com status "pendente" até o supervisor aprovar. O horário será marcado em laranja.
+            </p>
+          </div>
+
+          {/* Botões */}
+          <div className="flex gap-3">
+            <button
+              onClick={onClose}
+              className="flex-1 py-3 border-2 border-gray-200 text-gray-500 rounded-xl font-medium text-sm hover:bg-gray-50 transition"
+            >
+              Cancelar
+            </button>
+            <button
+              onClick={handleConfirm}
+              disabled={!selectedReason.trim()}
+              className="flex-[2] py-3 bg-gradient-to-r from-orange-500 to-amber-500 text-white rounded-xl font-semibold text-sm shadow-lg shadow-orange-500/30 hover:shadow-orange-500/50 active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none"
+            >
+              ✓ Enviar Justificativa
             </button>
           </div>
         </div>

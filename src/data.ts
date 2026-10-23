@@ -1,10 +1,10 @@
 import { Post, UniformItem, UniformRequest, Ticket, Coverage, OvertimeRequest, Notification, User } from './types';
 
 export const users: User[] = [
-  { id: '1', name: 'Carlos Silva', matricula: 'V001', role: 'guard', phone: '(11) 99999-0001' },
-  { id: '2', name: 'João Santos', matricula: 'V002', role: 'guard', phone: '(11) 99999-0002' },
-  { id: '3', name: 'Pedro Oliveira', matricula: 'V003', role: 'guard', phone: '(11) 99999-0003' },
-  { id: '4', name: 'Roberto Lima', matricula: 'V004', role: 'guard', phone: '(11) 99999-0004' },
+  { id: '1', name: 'Carlos Silva', matricula: 'V001', role: 'guard', phone: '(11) 99999-0001', posto: 'Edifício Central' },
+  { id: '2', name: 'João Santos', matricula: 'V002', role: 'guard', phone: '(11) 99999-0002', posto: 'Condomínio Parque Sul' },
+  { id: '3', name: 'Pedro Oliveira', matricula: 'V003', role: 'guard', phone: '(11) 99999-0003', posto: 'Depósito Industrial' },
+  { id: '4', name: 'Roberto Lima', matricula: 'V004', role: 'guard', phone: '(11) 99999-0004', posto: 'Shopping Center Norte' },
   { id: '5', name: 'Supervisor Admin', matricula: 'ADM01', role: 'admin', phone: '(11) 99999-0099' },
 ];
 

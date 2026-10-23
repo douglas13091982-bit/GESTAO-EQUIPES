@@ -7,6 +7,7 @@ export interface User {
   role: UserRole;
   phone: string;
   photo?: string;
+  posto?: string;
 }
 
 export interface Post {

@@ -670,55 +670,58 @@ function PontoView() {
   const { currentUser } = useApp();
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
   const [selectedYear] = useState(new Date().getFullYear());
+  const [selectedGuardId, setSelectedGuardId] = useState<string | null>(null);
   const WEEKDAYS_SHORT = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
   const MONTHS = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
 
   // Simulated guard time records for admin view
-  const guardRecords: Record<string, Record<string, { entrada1: string; saida1: string; entrada2: string; saida2: string }>> = {
+  const guardRecords: Record<string, Record<string, { entrada1: string; saida1: string; entrada2: string; saida2: string; entradaHE: string; saidaHE: string }>> = {
     '1': { // Carlos Silva
-      '15': { entrada1: '07:00', saida1: '12:00', entrada2: '13:00', saida2: '19:00' },
-      '16': { entrada1: '06:55', saida1: '12:02', entrada2: '13:05', saida2: '19:00' },
-      '17': { entrada1: '07:02', saida1: '12:00', entrada2: '13:00', saida2: '19:05' },
-      '18': { entrada1: '07:00', saida1: '12:00', entrada2: '', saida2: '' },
-      '19': { entrada1: '07:10', saida1: '12:00', entrada2: '13:00', saida2: '19:00' },
-      '20': { entrada1: '', saida1: '', entrada2: '', saida2: '' },
-      '21': { entrada1: '06:58', saida1: '12:00', entrada2: '13:02', saida2: '19:00' },
+      '15': { entrada1: '07:00', saida1: '12:00', entrada2: '13:00', saida2: '19:00', entradaHE: '', saidaHE: '' },
+      '16': { entrada1: '06:55', saida1: '12:02', entrada2: '13:05', saida2: '19:00', entradaHE: '19:00', saidaHE: '22:00' },
+      '17': { entrada1: '07:02', saida1: '12:00', entrada2: '13:00', saida2: '19:05', entradaHE: '', saidaHE: '' },
+      '18': { entrada1: '07:00', saida1: '12:00', entrada2: '', saida2: '', entradaHE: '', saidaHE: '' },
+      '19': { entrada1: '07:10', saida1: '12:00', entrada2: '13:00', saida2: '19:00', entradaHE: '19:30', saidaHE: '23:00' },
+      '20': { entrada1: '', saida1: '', entrada2: '', saida2: '', entradaHE: '', saidaHE: '' },
+      '21': { entrada1: '06:58', saida1: '12:00', entrada2: '13:02', saida2: '19:00', entradaHE: '', saidaHE: '' },
     },
     '2': { // João Santos
-      '15': { entrada1: '19:00', saida1: '00:00', entrada2: '', saida2: '' },
-      '16': { entrada1: '19:05', saida1: '00:00', entrada2: '', saida2: '' },
-      '17': { entrada1: '19:00', saida1: '00:05', entrada2: '', saida2: '' },
-      '18': { entrada1: '19:00', saida1: '00:00', entrada2: '', saida2: '' },
-      '19': { entrada1: '19:00', saida1: '00:00', entrada2: '', saida2: '' },
-      '20': { entrada1: '19:02', saida1: '00:00', entrada2: '', saida2: '' },
-      '21': { entrada1: '', saida1: '', entrada2: '', saida2: '' },
+      '15': { entrada1: '19:00', saida1: '00:00', entrada2: '', saida2: '', entradaHE: '00:00', saidaHE: '03:00' },
+      '16': { entrada1: '19:05', saida1: '00:00', entrada2: '', saida2: '', entradaHE: '', saidaHE: '' },
+      '17': { entrada1: '19:00', saida1: '00:05', entrada2: '', saida2: '', entradaHE: '00:30', saidaHE: '04:00' },
+      '18': { entrada1: '19:00', saida1: '00:00', entrada2: '', saida2: '', entradaHE: '', saidaHE: '' },
+      '19': { entrada1: '19:00', saida1: '00:00', entrada2: '', saida2: '', entradaHE: '', saidaHE: '' },
+      '20': { entrada1: '19:02', saida1: '00:00', entrada2: '', saida2: '', entradaHE: '01:00', saidaHE: '04:30' },
+      '21': { entrada1: '', saida1: '', entrada2: '', saida2: '', entradaHE: '', saidaHE: '' },
     },
     '3': { // Pedro Oliveira
-      '15': { entrada1: '07:00', saida1: '12:00', entrada2: '13:00', saida2: '19:00' },
-      '16': { entrada1: '07:05', saida1: '12:00', entrada2: '13:00', saida2: '19:00' },
-      '17': { entrada1: '', saida1: '', entrada2: '', saida2: '' },
-      '18': { entrada1: '07:00', saida1: '12:00', entrada2: '13:00', saida2: '19:00' },
-      '19': { entrada1: '07:00', saida1: '12:00', entrada2: '13:00', saida2: '19:00' },
-      '20': { entrada1: '07:00', saida1: '12:00', entrada2: '13:00', saida2: '19:00' },
-      '21': { entrada1: '07:00', saida1: '12:00', entrada2: '13:00', saida2: '19:00' },
+      '15': { entrada1: '07:00', saida1: '12:00', entrada2: '13:00', saida2: '19:00', entradaHE: '', saidaHE: '' },
+      '16': { entrada1: '07:05', saida1: '12:00', entrada2: '13:00', saida2: '19:00', entradaHE: '19:00', saidaHE: '23:00' },
+      '17': { entrada1: '', saida1: '', entrada2: '', saida2: '', entradaHE: '', saidaHE: '' },
+      '18': { entrada1: '07:00', saida1: '12:00', entrada2: '13:00', saida2: '19:00', entradaHE: '', saidaHE: '' },
+      '19': { entrada1: '07:00', saida1: '12:00', entrada2: '13:00', saida2: '19:00', entradaHE: '19:00', saidaHE: '22:30' },
+      '20': { entrada1: '07:00', saida1: '12:00', entrada2: '13:00', saida2: '19:00', entradaHE: '', saidaHE: '' },
+      '21': { entrada1: '07:00', saida1: '12:00', entrada2: '13:00', saida2: '19:00', entradaHE: '', saidaHE: '' },
     },
     '4': { // Roberto Lima
-      '15': { entrada1: '19:00', saida1: '00:00', entrada2: '', saida2: '' },
-      '16': { entrada1: '19:00', saida1: '00:00', entrada2: '', saida2: '' },
-      '17': { entrada1: '19:00', saida1: '00:00', entrada2: '', saida2: '' },
-      '18': { entrada1: '19:00', saida1: '00:00', entrada2: '', saida2: '' },
-      '19': { entrada1: '', saida1: '', entrada2: '', saida2: '' },
-      '20': { entrada1: '19:05', saida1: '00:00', entrada2: '', saida2: '' },
-      '21': { entrada1: '19:00', saida1: '00:00', entrada2: '', saida2: '' },
+      '15': { entrada1: '19:00', saida1: '00:00', entrada2: '', saida2: '', entradaHE: '', saidaHE: '' },
+      '16': { entrada1: '19:00', saida1: '00:00', entrada2: '', saida2: '', entradaHE: '00:00', saidaHE: '04:00' },
+      '17': { entrada1: '19:00', saida1: '00:00', entrada2: '', saida2: '', entradaHE: '', saidaHE: '' },
+      '18': { entrada1: '19:00', saida1: '00:00', entrada2: '', saida2: '', entradaHE: '01:00', saidaHE: '05:00' },
+      '19': { entrada1: '', saida1: '', entrada2: '', saida2: '', entradaHE: '', saidaHE: '' },
+      '20': { entrada1: '19:05', saida1: '00:00', entrada2: '', saida2: '', entradaHE: '', saidaHE: '' },
+      '21': { entrada1: '19:00', saida1: '00:00', entrada2: '', saida2: '', entradaHE: '00:30', saidaHE: '04:00' },
     },
   };
 
   const guards = [
-    { id: '1', name: 'Carlos Silva', matricula: 'V001' },
-    { id: '2', name: 'João Santos', matricula: 'V002' },
-    { id: '3', name: 'Pedro Oliveira', matricula: 'V003' },
-    { id: '4', name: 'Roberto Lima', matricula: 'V004' },
+    { id: '1', name: 'Carlos Silva', matricula: 'V001', posto: 'Edifício Central' },
+    { id: '2', name: 'João Santos', matricula: 'V002', posto: 'Condomínio Parque Sul' },
+    { id: '3', name: 'Pedro Oliveira', matricula: 'V003', posto: 'Depósito Industrial' },
+    { id: '4', name: 'Roberto Lima', matricula: 'V004', posto: 'Shopping Center Norte' },
   ];
+
+  const selectedGuard = guards.find(g => g.id === selectedGuardId);
 
   const lastDay = new Date(selectedYear, selectedMonth + 1, 0).getDate();
   const startDay = 15;
@@ -735,7 +738,7 @@ function PontoView() {
     return date.getDay() === 0;
   };
 
-  const calcDayTotal = (record: { entrada1: string; saida1: string; entrada2: string; saida2: string } | undefined): string => {
+  const calcDayTotal = (record: { entrada1: string; saida1: string; entrada2: string; saida2: string; entradaHE?: string; saidaHE?: string } | undefined): string => {
     if (!record || !record.entrada1 || !record.saida1) return '--:--';
     const toMin = (t: string) => { const [h, m] = t.split(':').map(Number); return h * 60 + m; };
     let total = toMin(record.saida1) - toMin(record.entrada1);
@@ -743,6 +746,16 @@ function PontoView() {
     if (total < 0) total += 24 * 60;
     const hours = Math.floor(total / 60);
     const mins = total % 60;
+    return `${String(hours).padStart(2, '0')}h${String(mins).padStart(2, '0')}`;
+  };
+
+  const calcHETotal = (record: { entradaHE?: string; saidaHE?: string } | undefined): string => {
+    if (!record || !record.entradaHE || !record.saidaHE) return '';
+    const toMin = (t: string) => { const [h, m] = t.split(':').map(Number); return h * 60 + m; };
+    let heMin = toMin(record.saidaHE) - toMin(record.entradaHE);
+    if (heMin < 0) heMin += 24 * 60;
+    const hours = Math.floor(heMin / 60);
+    const mins = heMin % 60;
     return `${String(hours).padStart(2, '0')}h${String(mins).padStart(2, '0')}`;
   };
 
@@ -788,16 +801,33 @@ function PontoView() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {guards.map(guard => {
           const stats = getGuardStats(guard.id);
+          const isSelected = selectedGuardId === guard.id;
           return (
-            <div key={guard.id} className="bg-white rounded-xl p-4 shadow-sm border border-gray-200">
+            <div
+              key={guard.id}
+              onClick={() => setSelectedGuardId(isSelected ? null : guard.id)}
+              className={`bg-white rounded-xl p-4 shadow-sm border-2 cursor-pointer transition-all hover:shadow-md hover:scale-[1.02] active:scale-[0.98] ${
+                isSelected ? 'border-indigo-500 shadow-indigo-200' : 'border-gray-200'
+              }`}
+            >
               <div className="flex items-center gap-3 mb-3">
                 <div className="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center text-indigo-600 font-bold text-sm">
                   {guard.name.charAt(0)}
                 </div>
-                <div>
-                  <p className="text-sm font-semibold text-gray-800">{guard.name}</p>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-gray-800 truncate">{guard.name}</p>
                   <p className="text-xs text-gray-500">{guard.matricula}</p>
+                  <p className="text-[10px] text-indigo-600 flex items-center gap-0.5 mt-0.5 truncate">
+                    <svg className="w-2.5 h-2.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                    {guard.posto}
+                  </p>
                 </div>
+                <svg className={`w-4 h-4 text-gray-400 transition-transform ${isSelected ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
               </div>
               <div className="grid grid-cols-3 gap-2 text-center">
                 <div className="bg-green-50 rounded-lg p-2">
@@ -818,8 +848,139 @@ function PontoView() {
         })}
       </div>
 
-      {/* Detailed Table per Guard */}
-      {guards.map(guard => {
+      {/* Detailed View for Selected Guard */}
+      {selectedGuard && (
+        <div className="bg-white rounded-xl shadow-lg border-2 border-indigo-300 overflow-hidden">
+          <div className="p-4 border-b border-gray-100 bg-gradient-to-r from-indigo-600 to-purple-600 text-white flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center text-white font-bold text-lg">
+                {selectedGuard.name.charAt(0)}
+              </div>
+              <div>
+                <h3 className="font-bold text-lg">{selectedGuard.name}</h3>
+                <div className="flex items-center gap-3 text-xs opacity-90">
+                  <span>Mat: {selectedGuard.matricula}</span>
+                  <span className="flex items-center gap-1">
+                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                    {selectedGuard.posto}
+                  </span>
+                </div>
+              </div>
+            </div>
+            <button
+              onClick={() => setSelectedGuardId(null)}
+              className="w-8 h-8 bg-white/20 hover:bg-white/30 rounded-full flex items-center justify-center transition"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+
+          {/* Stats do vigilante selecionado */}
+          {(() => {
+            const records = guardRecords[selectedGuard.id] || {};
+            let worked = 0, totalMin = 0, totalHE = 0, absent = 0;
+            days.forEach(d => {
+              const r = records[`${d}`];
+              if (r?.entrada1 && r?.saida1) {
+                worked++;
+                const toMin = (t: string) => { const [h, m] = t.split(':').map(Number); return h * 60 + m; };
+                let dayMin = toMin(r.saida1) - toMin(r.entrada1);
+                if (r.entrada2 && r.saida2) dayMin += toMin(r.saida2) - toMin(r.entrada2);
+                if (dayMin < 0) dayMin += 24 * 60;
+                totalMin += dayMin;
+                if (r.entradaHE && r.saidaHE) {
+                  let heMin = toMin(r.saidaHE) - toMin(r.entradaHE);
+                  if (heMin < 0) heMin += 24 * 60;
+                  totalHE += heMin;
+                }
+              } else if (!isSunday(d)) {
+                absent++;
+              }
+            });
+            return (
+              <div className="grid grid-cols-4 gap-3 p-4 bg-gray-50 border-b border-gray-200">
+                <div className="text-center">
+                  <p className="text-xl font-bold text-green-600">{worked}</p>
+                  <p className="text-[10px] text-gray-500">Dias Trabalhados</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-xl font-bold text-blue-600">{Math.floor(totalMin / 60)}h{String(totalMin % 60).padStart(2, '0')}</p>
+                  <p className="text-[10px] text-gray-500">Total Horas</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-xl font-bold text-orange-600">{Math.floor(totalHE / 60)}h{String(totalHE % 60).padStart(2, '0')}</p>
+                  <p className="text-[10px] text-gray-500">Horas Extras</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-xl font-bold text-red-600">{absent}</p>
+                  <p className="text-[10px] text-gray-500">Faltas</p>
+                </div>
+              </div>
+            );
+          })()}
+
+          {/* Tabela detalhada do vigilante */}
+          <div className="overflow-x-auto">
+            <table className="w-full text-xs">
+              <thead className="bg-gray-800 text-white">
+                <tr>
+                  <th className="px-3 py-2 text-left font-medium">Dia</th>
+                  <th className="px-2 py-2 text-center font-medium">1ª Ent.</th>
+                  <th className="px-2 py-2 text-center font-medium">1ª Saída</th>
+                  <th className="px-2 py-2 text-center font-medium">2ª Ent.</th>
+                  <th className="px-2 py-2 text-center font-medium">2ª Saída</th>
+                  <th className="px-2 py-2 text-center font-medium bg-orange-700">Ent. HE</th>
+                  <th className="px-2 py-2 text-center font-medium bg-orange-700">Saí. HE</th>
+                  <th className="px-2 py-2 text-center font-medium">Total</th>
+                  <th className="px-2 py-2 text-center font-medium">HE</th>
+                  <th className="px-2 py-2 text-center font-medium">Status</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {days.map(day => {
+                  const record = (guardRecords[selectedGuard.id] || {})[`${day}`];
+                  const sunday = isSunday(day);
+                  const hasRecord = record?.entrada1 && record?.saida1;
+                  const hasHE = record?.entradaHE && record?.saidaHE;
+                  return (
+                    <tr key={day} className={`${sunday ? 'bg-red-50/50' : hasRecord ? '' : 'bg-yellow-50/30'}`}>
+                      <td className="px-3 py-2">
+                        <span className="font-bold text-gray-700">{String(day).padStart(2, '0')}</span>
+                        <span className={`ml-1.5 text-gray-400 ${sunday ? 'text-red-400' : ''}`}>{getDayOfWeek(day)}</span>
+                      </td>
+                      <td className="px-2 py-2 text-center font-mono">{record?.entrada1 || <span className="text-gray-300">--:--</span>}</td>
+                      <td className="px-2 py-2 text-center font-mono">{record?.saida1 || <span className="text-gray-300">--:--</span>}</td>
+                      <td className="px-2 py-2 text-center font-mono">{record?.entrada2 || <span className="text-gray-300">--:--</span>}</td>
+                      <td className="px-2 py-2 text-center font-mono">{record?.saida2 || <span className="text-gray-300">--:--</span>}</td>
+                      <td className="px-2 py-2 text-center font-mono bg-orange-50/50">{record?.entradaHE || <span className="text-gray-300">--:--</span>}</td>
+                      <td className="px-2 py-2 text-center font-mono bg-orange-50/50">{record?.saidaHE || <span className="text-gray-300">--:--</span>}</td>
+                      <td className="px-2 py-2 text-center font-mono font-semibold text-green-700">{calcDayTotal(record)}</td>
+                      <td className="px-2 py-2 text-center font-mono font-semibold text-orange-600">{calcHETotal(record) || <span className="text-gray-300">--:--</span>}</td>
+                      <td className="px-2 py-2 text-center">
+                        {sunday ? (
+                          <span className="px-1.5 py-0.5 bg-red-100 text-red-600 rounded text-[10px]">Folga</span>
+                        ) : hasRecord ? (
+                          <span className="px-1.5 py-0.5 bg-green-100 text-green-600 rounded text-[10px]">✓ OK</span>
+                        ) : (
+                          <span className="px-1.5 py-0.5 bg-yellow-100 text-yellow-600 rounded text-[10px]">⚠ Pend.</span>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* Detailed Table per Guard - Only show when no guard is selected */}
+      {!selectedGuardId && guards.map(guard => {
         const records = guardRecords[guard.id] || {};
         return (
           <div key={guard.id} className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">

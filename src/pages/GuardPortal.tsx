@@ -1,9 +1,36 @@
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../context';
-import { uniformReasons, ticketCategories } from '../data';
+import { uniformReasons, ticketCategories, users as allUsers } from '../data';
+import {
+  Home,
+  Shirt,
+  Wrench,
+  Repeat2,
+  Clock,
+  MapPin,
+  BarChart3,
+  LogOut,
+  Phone,
+  Sun,
+  Moon,
+  Sunrise,
+  Sunset,
+  Timer,
+  CheckCircle2,
+  AlertTriangle,
+  type LucideIcon,
+} from 'lucide-react';
 
 type Tab = 'home' | 'uniform' | 'ticket' | 'coverage' | 'ponto';
 type PontoView = 'tabela' | 'resumo';
+
+const GUARD_NAV: { id: Tab; icon: LucideIcon; label: string }[] = [
+  { id: 'home', icon: Home, label: 'Início' },
+  { id: 'uniform', icon: Shirt, label: 'Uniforme' },
+  { id: 'ticket', icon: Wrench, label: 'Chamados' },
+  { id: 'coverage', icon: Repeat2, label: 'Cobertura' },
+  { id: 'ponto', icon: Clock, label: 'Ponto' },
+];
 
 interface TimeRecord {
   entrada1: string;
@@ -59,41 +86,44 @@ export default function GuardPortal() {
   }
 
   return (
-    <div className="h-screen bg-gray-50 flex flex-col max-w-lg mx-auto overflow-hidden">
+    <div className="h-screen bg-canvas flex flex-col max-w-lg mx-auto overflow-hidden sm:border-x sm:border-gray-200 sm:shadow-lg">
       {/* Header */}
-      <header className="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-4 shadow-lg shrink-0">
+      <header className="bg-ink text-white px-4 py-3 shrink-0">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center text-lg font-bold">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center text-base font-bold shrink-0">
               {currentUser.name.charAt(0)}
             </div>
-            <div>
-              <p className="font-semibold text-sm">{currentUser.name}</p>
-              <p className="text-blue-200 text-xs">Mat: {currentUser.matricula}</p>
-              {currentUser.posto && (
-                <p className="text-blue-100 text-[10px] flex items-center gap-1 mt-0.5">
-                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                  </svg>
-                  {currentUser.posto}
-                </p>
-              )}
+            <div className="min-w-0">
+              <p className="font-display font-semibold text-sm truncate">{currentUser.name}</p>
+              <p className="text-gray-400 text-xs flex items-center gap-1.5 truncate">
+                <span>Mat. {currentUser.matricula}</span>
+                {currentUser.posto && (
+                  <>
+                    <span className="text-gray-600">·</span>
+                    <MapPin className="w-3 h-3 shrink-0" />
+                    <span className="truncate">{currentUser.posto}</span>
+                  </>
+                )}
+              </p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 shrink-0">
             {activeTab === 'ponto' && (
               <button
                 onClick={() => setPontoView('resumo')}
-                className="text-xs bg-white/20 hover:bg-white/30 px-3 py-1.5 rounded-lg font-medium transition flex items-center gap-1"
+                className="text-xs bg-white/10 hover:bg-white/20 px-3 py-2 rounded-lg font-medium transition flex items-center gap-1.5"
               >
-                📊 Resumo
+                <BarChart3 className="w-3.5 h-3.5" /> Resumo
               </button>
             )}
-            <button onClick={logout} className="text-blue-200 hover:text-white transition p-2">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-              </svg>
+            <button
+              onClick={logout}
+              aria-label="Sair"
+              title="Sair"
+              className="text-gray-400 hover:text-white hover:bg-white/10 transition p-2.5 rounded-lg"
+            >
+              <LogOut className="w-5 h-5" />
             </button>
           </div>
         </div>
@@ -101,7 +131,7 @@ export default function GuardPortal() {
 
       {/* Content */}
       <main className={`flex-1 overflow-hidden ${activeTab === 'ponto' ? '' : 'overflow-y-auto p-4'}`}>
-        {activeTab === 'home' && <HomeTab myRequests={myRequests} myTickets={myTickets} myCoverages={myCoverages} />}
+        {activeTab === 'home' && <HomeTab myRequests={myRequests} myTickets={myTickets} myCoverages={myCoverages} user={currentUser} onNavigate={setActiveTab} />}
         {activeTab === 'uniform' && <UniformTab items={uniformItems} myRequests={myRequests} onSubmit={addUniformRequest} guardId={currentUser.id} />}
         {activeTab === 'ticket' && <TicketTab myTickets={myTickets} onSubmit={addTicket} guardId={currentUser.id} />}
         {activeTab === 'coverage' && <CoverageTab myCoverages={myCoverages} onCheckIn={checkInCoverage} onCheckOut={checkOutCoverage} guardId={currentUser.id} guardName={currentUser.name} />}
@@ -109,24 +139,27 @@ export default function GuardPortal() {
       </main>
 
       {/* Bottom Navigation */}
-      <nav className="shrink-0 bg-white border-t border-gray-200 shadow-lg">
-        <div className="grid grid-cols-5">
-          {[
-            { id: 'home' as Tab, icon: '🏠', label: 'Início' },
-            { id: 'uniform' as Tab, icon: '👔', label: 'Uniforme' },
-            { id: 'ticket' as Tab, icon: '🔧', label: 'Chamados' },
-            { id: 'coverage' as Tab, icon: '🔄', label: 'Cobertura' },
-            { id: 'ponto' as Tab, icon: '⏱️', label: 'Ponto' },
-          ].map(tab => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`flex flex-col items-center py-3 px-1 transition ${activeTab === tab.id ? 'text-blue-600 border-t-2 border-blue-600 bg-blue-50' : 'text-gray-500 hover:text-gray-700'}`}
-            >
-              <span className="text-xl">{tab.icon}</span>
-              <span className="text-[10px] mt-1 font-medium">{tab.label}</span>
-            </button>
-          ))}
+      <nav
+        className="shrink-0 bg-white border-t border-gray-200"
+        style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
+        aria-label="Menu principal"
+      >
+        <div className="grid grid-cols-5 px-2 py-2 gap-1">
+          {GUARD_NAV.map(tab => {
+            const Icon = tab.icon;
+            const active = activeTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                aria-current={active ? 'page' : undefined}
+                className={`flex flex-col items-center py-2 px-1 rounded-xl transition ${active ? 'bg-ink text-white' : 'text-gray-500 hover:bg-gray-100'}`}
+              >
+                <Icon className="w-5 h-5" strokeWidth={active ? 2.3 : 1.8} />
+                <span className="text-[10px] mt-1 font-medium">{tab.label}</span>
+              </button>
+            );
+          })}
         </div>
       </nav>
     </div>
@@ -299,7 +332,7 @@ function PontoTab() {
   return (
     <div className="h-full flex flex-col bg-white">
       {/* Header compacto do ponto */}
-      <div className="shrink-0 bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-3 py-2 flex items-center justify-between">
+      <div className="shrink-0 bg-ink text-white px-3 py-2 flex items-center justify-between">
         <div>
           <p className="text-xs font-medium opacity-80">{getMonthName()} / {getYear()}</p>
           <p className="text-sm font-bold">Ponto Eletrônico</p>
@@ -316,13 +349,13 @@ function PontoTab() {
 
       {/* Card de Escala do Vigilante */}
       {escala && (
-        <div className="shrink-0 bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-blue-200 px-3 py-2.5">
+        <div className="shrink-0 bg-blue-50 border-b border-blue-200 px-3 py-2.5">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-sm ${
                 escala.turno === 'diurno' ? 'bg-yellow-500' : 'bg-indigo-600'
               }`}>
-                {escala.turno === 'diurno' ? '☀️' : '🌙'}
+                {escala.turno === 'diurno' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
               </div>
               <div>
                 <p className="text-xs font-bold text-gray-800">
@@ -530,7 +563,7 @@ function PontoResumo({ onBack }: { onBack: () => void }) {
   return (
     <div className="h-screen bg-gray-50 flex flex-col max-w-lg mx-auto">
       {/* Header */}
-      <header className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white p-4 shadow-lg shrink-0">
+      <header className="bg-ink text-white p-4 shadow-lg shrink-0">
         <div className="flex items-center justify-between">
           <button onClick={onBack} className="flex items-center gap-2 text-white/80 hover:text-white transition">
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -551,29 +584,29 @@ function PontoResumo({ onBack }: { onBack: () => void }) {
         {/* Cards de resumo */}
         <div className="grid grid-cols-2 gap-3">
           <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100 text-center">
-            <div className="w-10 h-10 mx-auto bg-green-100 rounded-full flex items-center justify-center text-green-600 text-lg mb-2">✓</div>
+            <div className="w-10 h-10 mx-auto bg-green-100 rounded-full flex items-center justify-center text-green-600 mb-2"><CheckCircle2 className="w-5 h-5" /></div>
             <p className="text-2xl font-bold text-green-700">{totalDaysWorked}</p>
             <p className="text-[10px] text-gray-500 mt-1">Dias Trabalhados</p>
           </div>
           <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100 text-center">
-            <div className="w-10 h-10 mx-auto bg-blue-100 rounded-full flex items-center justify-center text-blue-600 text-lg mb-2">⏱</div>
+            <div className="w-10 h-10 mx-auto bg-blue-100 rounded-full flex items-center justify-center text-blue-600 mb-2"><Clock className="w-5 h-5" /></div>
             <p className="text-2xl font-bold text-blue-700">{totalHours}h{String(totalMins).padStart(2, '0')}</p>
             <p className="text-[10px] text-gray-500 mt-1">Total de Horas</p>
           </div>
           <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100 text-center">
-            <div className="w-10 h-10 mx-auto bg-orange-100 rounded-full flex items-center justify-center text-orange-600 text-lg mb-2">⏰</div>
+            <div className="w-10 h-10 mx-auto bg-orange-100 rounded-full flex items-center justify-center text-orange-600 mb-2"><Timer className="w-5 h-5" /></div>
             <p className="text-2xl font-bold text-orange-700">{totalHoursHE}h{String(totalMinsHE).padStart(2, '0')}</p>
             <p className="text-[10px] text-gray-500 mt-1">Horas Extras</p>
           </div>
           <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100 text-center">
-            <div className="w-10 h-10 mx-auto bg-red-100 rounded-full flex items-center justify-center text-red-600 text-lg mb-2">⚠</div>
+            <div className="w-10 h-10 mx-auto bg-red-100 rounded-full flex items-center justify-center text-red-600 mb-2"><AlertTriangle className="w-5 h-5" /></div>
             <p className="text-2xl font-bold text-red-700">{daysMissing}</p>
             <p className="text-[10px] text-gray-500 mt-1">Pendências</p>
           </div>
         </div>
 
         {/* Média diária */}
-        <div className="bg-gradient-to-r from-indigo-500 to-purple-500 rounded-xl p-4 text-white shadow-lg">
+        <div className="bg-ink rounded-xl p-4 text-white shadow-lg">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-xs opacity-80">Média diária de trabalho</p>
@@ -689,7 +722,7 @@ function ClockModal({
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 backdrop-blur-sm" onClick={onClose}>
       <div className="bg-white w-full max-w-sm rounded-t-3xl sm:rounded-3xl shadow-2xl overflow-hidden animate-slide-up" onClick={e => e.stopPropagation()}>
         {/* Header do modal */}
-        <div className={`p-5 text-white text-center ${fieldIndex >= 5 ? 'bg-gradient-to-r from-orange-500 to-red-500' : 'bg-gradient-to-r from-indigo-600 to-purple-600'}`}>
+        <div className={`p-5 text-white text-center ${fieldIndex >= 5 ? 'bg-orange-600' : 'bg-ink'}`}>
           <p className={`text-xs font-medium uppercase tracking-wider ${fieldIndex >= 5 ? 'text-orange-100' : 'text-indigo-200'}`}>
             {fieldIndex >= 5 ? 'Registrar Hora Extra' : 'Registrar Ponto'}
           </p>
@@ -698,7 +731,7 @@ function ClockModal({
           </p>
           <div className={`mt-2 inline-flex items-center gap-2 rounded-full px-4 py-1.5 ${fieldIndex >= 5 ? 'bg-white/20' : 'bg-white/20'}`}>
             <span className="text-sm">
-              {fieldIndex >= 5 ? '⏰' : fieldIndex <= 2 ? '🌅' : '🌆'}
+              {fieldIndex >= 5 ? <Timer className="w-4 h-4" /> : fieldIndex <= 2 ? <Sunrise className="w-4 h-4" /> : <Sunset className="w-4 h-4" />}
             </span>
             <span className="font-semibold text-sm">
               {fieldIndex >= 5 ? fieldLabel : `${fieldIndex}º Registro - ${fieldLabel}`}
@@ -797,7 +830,7 @@ function ClockModal({
             </button>
             <button
               onClick={handleConfirm}
-              className="flex-[2] py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl font-semibold text-sm shadow-lg shadow-indigo-500/30 hover:shadow-indigo-500/50 active:scale-[0.98] transition-all"
+              className="flex-[2] py-3 bg-ink text-white rounded-xl font-semibold text-sm shadow-lg shadow-indigo-500/30 hover:shadow-indigo-500/50 active:scale-[0.98] transition-all"
             >
               ✓ Confirmar Registro
             </button>
@@ -847,7 +880,7 @@ function JustificationModal({
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 backdrop-blur-sm" onClick={onClose}>
       <div className="bg-white w-full max-w-sm rounded-t-3xl sm:rounded-3xl shadow-2xl overflow-hidden animate-slide-up" onClick={e => e.stopPropagation()}>
         {/* Header */}
-        <div className="bg-gradient-to-r from-orange-500 to-amber-500 p-5 text-white text-center">
+        <div className="bg-amber-500 p-5 text-white text-center">
           <p className="text-orange-100 text-xs font-medium uppercase tracking-wider">Justificar Horário</p>
           <p className="text-xl font-bold mt-1">
             {String(day).padStart(2, '0')}/{String(new Date().getMonth() + 1).padStart(2, '0')} - {dayOfWeek}
@@ -923,7 +956,7 @@ function JustificationModal({
             <button
               onClick={handleConfirm}
               disabled={!selectedReason.trim()}
-              className="flex-[2] py-3 bg-gradient-to-r from-orange-500 to-amber-500 text-white rounded-xl font-semibold text-sm shadow-lg shadow-orange-500/30 hover:shadow-orange-500/50 active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none"
+              className="flex-[2] py-3 bg-amber-500 text-white rounded-xl font-semibold text-sm shadow-lg shadow-orange-500/30 hover:shadow-orange-500/50 active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none"
             >
               ✓ Enviar Justificativa
             </button>
@@ -935,7 +968,14 @@ function JustificationModal({
 }
 
 /* ==================== HOME TAB ==================== */
-function HomeTab({ myRequests, myTickets, myCoverages }: any) {
+function greeting(): string {
+  const h = new Date().getHours();
+  if (h < 12) return 'Bom dia';
+  if (h < 18) return 'Boa tarde';
+  return 'Boa noite';
+}
+
+function HomeTab({ myRequests, myTickets, myCoverages, user, onNavigate }: any) {
   const pendingRequests = myRequests.filter((r: any) => r.status === 'pending').length;
   const openTickets = myTickets.filter((t: any) => t.status === 'open').length;
   const activeCoverage = myCoverages.find((c: any) => c.status === 'active');
@@ -945,84 +985,119 @@ function HomeTab({ myRequests, myTickets, myCoverages }: any) {
   const records = saved ? JSON.parse(saved) : {};
   const todayRecord = records[`${today}`];
   const hasPontoToday = todayRecord?.entrada1;
+  const daysRegistered = Object.values(records).filter((v: any) => v.entrada1).length;
+
+  const supervisor = allUsers.find(u => u.role === 'admin');
+  const firstName = String(user?.name || '').split(' ')[0];
+  const escala = user?.escala;
+
+  const shortcuts: { label: string; icon: LucideIcon; onClick?: () => void; href?: string }[] = [
+    { label: 'Registrar ponto', icon: Clock, onClick: () => onNavigate('ponto') },
+    { label: 'Abrir chamado', icon: Wrench, onClick: () => onNavigate('ticket') },
+    { label: 'Pedir uniforme', icon: Shirt, onClick: () => onNavigate('uniform') },
+    ...(supervisor ? [{ label: 'Ligar p/ supervisor', icon: Phone, href: `tel:${supervisor.phone.replace(/\D/g, '')}` }] : []),
+  ];
 
   return (
     <div className="space-y-4">
-      <div className="bg-gradient-to-r from-blue-500 to-cyan-500 rounded-2xl p-5 text-white shadow-lg">
-        <h2 className="text-lg font-bold">Bom dia, Vigilante!</h2>
-        <p className="text-blue-100 text-sm mt-1">Resumo do seu dia</p>
-      </div>
+      {/* Turno */}
+      <section className="rounded-3xl bg-ink text-white p-5 shadow-md relative overflow-hidden">
+        <div className="grid-ink absolute inset-0 opacity-60" aria-hidden />
+        <div className="relative">
+          <p className="text-sm text-gray-400">{greeting()},</p>
+          <h2 className="font-display text-2xl font-semibold">{firstName}</h2>
 
-      <div className={`rounded-xl p-4 border ${hasPontoToday ? 'bg-green-50 border-green-200' : 'bg-orange-50 border-orange-200'}`}>
-        <div className="flex items-center gap-3">
-          <span className="text-2xl">{hasPontoToday ? '✅' : '⚠️'}</span>
-          <div>
-            <p className={`font-semibold text-sm ${hasPontoToday ? 'text-green-700' : 'text-orange-700'}`}>
-              {hasPontoToday ? 'Ponto registrado hoje' : 'Ponto pendente hoje'}
-            </p>
-            <p className={`text-xs ${hasPontoToday ? 'text-green-600' : 'text-orange-600'}`}>
-              {hasPontoToday
-                ? `Entrada: ${todayRecord.entrada1}${todayRecord.saida1 ? ` | Saída: ${todayRecord.saida1}` : ''}`
-                : 'Clique em "Ponto" para registrar'}
-            </p>
-          </div>
+          {escala ? (
+            <div className="mt-5 flex items-center gap-4">
+              <span className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center shrink-0">
+                {escala.turno === 'noturno' ? <Moon className="w-5 h-5 text-signal" /> : <Sun className="w-5 h-5 text-signal" />}
+              </span>
+              <div>
+                <p className="text-xs text-gray-400">Seu turno · {escala.turno === 'noturno' ? 'Noturno' : 'Diurno'}</p>
+                <p className="font-display text-xl font-semibold tabular-nums">
+                  {escala.entrada} – {escala.saida}
+                </p>
+                {escala.intervalo && <p className="text-xs text-gray-400 mt-0.5">Intervalo {escala.intervalo}</p>}
+              </div>
+            </div>
+          ) : (
+            <p className="mt-4 text-sm text-gray-400">Sem escala definida para você ainda.</p>
+          )}
         </div>
-      </div>
+      </section>
 
-      <div className="grid grid-cols-2 gap-3">
-        <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
-          <div className="text-2xl font-bold text-blue-600">{pendingRequests}</div>
-          <div className="text-xs text-gray-500 mt-1">Uniformes Pendentes</div>
+      {/* Ponto de hoje */}
+      <section className={`rounded-2xl p-4 border flex items-center gap-3 ${hasPontoToday ? 'bg-green-50 border-green-200' : 'bg-amber-50 border-amber-200'}`}>
+        <span className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${hasPontoToday ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'}`}>
+          {hasPontoToday ? <CheckCircle2 className="w-5 h-5" /> : <AlertTriangle className="w-5 h-5" />}
+        </span>
+        <div className="flex-1 min-w-0">
+          <p className={`font-semibold text-sm ${hasPontoToday ? 'text-green-800' : 'text-amber-800'}`}>
+            {hasPontoToday ? 'Ponto registrado hoje' : 'Ponto pendente hoje'}
+          </p>
+          <p className={`text-xs ${hasPontoToday ? 'text-green-700' : 'text-amber-700'}`}>
+            {hasPontoToday
+              ? `Entrada ${todayRecord.entrada1}${todayRecord.saida1 ? ` · Saída ${todayRecord.saida1}` : ''}`
+              : 'Toque em Registrar ponto para marcar sua entrada.'}
+          </p>
         </div>
-        <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
-          <div className="text-2xl font-bold text-orange-500">{openTickets}</div>
-          <div className="text-xs text-gray-500 mt-1">Chamados Abertos</div>
-        </div>
-        <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
-          <div className="text-2xl font-bold text-green-500">{activeCoverage ? '1' : '0'}</div>
-          <div className="text-xs text-gray-500 mt-1">Cobertura Ativa</div>
-        </div>
-        <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
-          <div className="text-2xl font-bold text-purple-500">
-            {(() => {
-              const s = localStorage.getItem('ponto_records');
-              if (!s) return '0';
-              const r = JSON.parse(s);
-              return Object.values(r).filter((v: any) => v.entrada1).length;
-            })()}
+        {!hasPontoToday && (
+          <button
+            onClick={() => onNavigate('ponto')}
+            className="text-xs font-semibold bg-amber-600 text-white px-3 py-2 rounded-lg hover:bg-amber-700 transition shrink-0"
+          >
+            Registrar
+          </button>
+        )}
+      </section>
+
+      {/* Números */}
+      <section className="grid grid-cols-2 gap-3">
+        {[
+          { label: 'Uniformes pendentes', value: pendingRequests, color: 'text-blue-600' },
+          { label: 'Chamados abertos', value: openTickets, color: 'text-amber-600' },
+          { label: 'Cobertura ativa', value: activeCoverage ? 1 : 0, color: 'text-emerald-600' },
+          { label: 'Dias registrados', value: daysRegistered, color: 'text-violet-600' },
+        ].map(m => (
+          <div key={m.label} className="bg-white rounded-2xl p-4 border border-gray-200 shadow-sm">
+            <div className={`font-display text-3xl font-semibold tabular-nums ${m.color}`}>{m.value}</div>
+            <div className="text-xs text-gray-500 mt-1">{m.label}</div>
           </div>
-          <div className="text-xs text-gray-500 mt-1">Dias Registrados</div>
-        </div>
-      </div>
+        ))}
+      </section>
 
       {activeCoverage && (
-        <div className="bg-green-50 border border-green-200 rounded-xl p-4">
+        <section className="bg-green-50 border border-green-200 rounded-2xl p-4">
           <div className="flex items-center gap-2 mb-2">
-            <span className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></span>
-            <span className="text-sm font-semibold text-green-700">Cobertura Ativa</span>
+            <span className="w-2.5 h-2.5 bg-emerald-500 rounded-full beacon" style={{ ['--beacon' as string]: 'rgb(16 185 129 / 0.5)' }}></span>
+            <span className="text-sm font-semibold text-green-800">Cobertura ativa</span>
           </div>
-          <p className="text-sm text-green-600">Posto: {activeCoverage.postName}</p>
-          <p className="text-xs text-green-500 mt-1">Check-in: {activeCoverage.checkIn ? new Date(activeCoverage.checkIn).toLocaleTimeString('pt-BR') : '--:--'}</p>
-        </div>
+          <p className="text-sm text-green-700">Posto: {activeCoverage.postName}</p>
+          <p className="text-xs text-green-600 mt-1">Check-in: {activeCoverage.checkIn ? new Date(activeCoverage.checkIn).toLocaleTimeString('pt-BR') : '--:--'}</p>
+        </section>
       )}
 
-      <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
-        <h3 className="font-semibold text-gray-700 mb-3">Acesso Rápido</h3>
+      {/* Atalhos */}
+      <section className="bg-white rounded-2xl p-4 border border-gray-200 shadow-sm">
+        <h3 className="font-display font-semibold text-gray-900 mb-3">Atalhos</h3>
         <div className="grid grid-cols-2 gap-2">
-          <button className="bg-blue-50 text-blue-700 rounded-lg p-3 text-sm font-medium hover:bg-blue-100 transition text-left">
-            📋 Minha Escala
-          </button>
-          <button className="bg-purple-50 text-purple-700 rounded-lg p-3 text-sm font-medium hover:bg-purple-100 transition text-left">
-            📍 Meus Postos
-          </button>
-          <button className="bg-green-50 text-green-700 rounded-lg p-3 text-sm font-medium hover:bg-green-100 transition text-left">
-            📊 Meu Histórico
-          </button>
-          <button className="bg-orange-50 text-orange-700 rounded-lg p-3 text-sm font-medium hover:bg-orange-100 transition text-left">
-            📞 Contato Supervisor
-          </button>
+          {shortcuts.map(s => {
+            const Icon = s.icon;
+            const cls = 'flex items-center gap-2.5 bg-gray-50 hover:bg-gray-100 text-gray-800 rounded-xl p-3 text-sm font-medium transition text-left';
+            return s.href ? (
+              <a key={s.label} href={s.href} className={cls}>
+                <Icon className="w-4 h-4 text-blue-600 shrink-0" />
+                {s.label}
+              </a>
+            ) : (
+              <button key={s.label} onClick={s.onClick} className={cls}>
+                <Icon className="w-4 h-4 text-blue-600 shrink-0" />
+                {s.label}
+              </button>
+            );
+          })}
         </div>
-      </div>
+      </section>
     </div>
   );
 }
@@ -1119,7 +1194,7 @@ function UniformTab({ items, myRequests, onSubmit, guardId }: any) {
             onClick={e => e.stopPropagation()}
           >
             {/* Header do popup */}
-            <div className="bg-gradient-to-r from-blue-600 to-cyan-500 p-5 text-white relative">
+            <div className="bg-ink p-5 text-white relative">
               <button
                 onClick={closeModal}
                 className="absolute top-3 right-3 w-8 h-8 bg-white/20 hover:bg-white/30 rounded-full flex items-center justify-center transition"
@@ -1207,7 +1282,7 @@ function UniformTab({ items, myRequests, onSubmit, guardId }: any) {
               <button
                 type="submit"
                 disabled={!size || !reason}
-                className="w-full py-3 bg-gradient-to-r from-blue-600 to-cyan-500 text-white rounded-xl font-semibold text-sm shadow-lg shadow-blue-500/30 hover:shadow-blue-500/50 active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none"
+                className="w-full py-3 bg-ink text-white rounded-xl font-semibold text-sm shadow-lg shadow-blue-500/30 hover:shadow-blue-500/50 active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none"
               >
                 ✓ Enviar Solicitação
               </button>
@@ -1393,7 +1468,7 @@ function CoverageTab({ myCoverages, onCheckIn, onCheckOut, guardId, guardName }:
         </form>
       )}
 
-      <div className="bg-gradient-to-r from-purple-500 to-indigo-500 rounded-xl p-5 text-white">
+      <div className="bg-ink rounded-xl p-5 text-white">
         <div className="flex items-center gap-3 mb-3">
           <span className="text-2xl">📱</span>
           <div>

@@ -1,115 +1,159 @@
 import React, { useState } from 'react';
+import {
+  LayoutDashboard,
+  MapPin,
+  Shirt,
+  ClipboardCheck,
+  Repeat2,
+  Clock,
+  Settings,
+  Bell,
+  LogOut,
+  ShieldCheck,
+  AlertTriangle,
+  Info,
+  CheckCircle2,
+  Hourglass,
+  Wrench,
+  Package,
+  Timer,
+  FileText,
+  Sun,
+  Moon,
+  type LucideIcon,
+} from 'lucide-react';
 import { useApp } from '../context';
 
 type AdminTab = 'dashboard' | 'posts' | 'uniforms' | 'approvals' | 'coverage' | 'ponto' | 'settings';
 
+const NAV: { id: AdminTab; icon: LucideIcon; label: string; short: string }[] = [
+  { id: 'dashboard', icon: LayoutDashboard, label: 'Dashboard', short: 'Painel' },
+  { id: 'posts', icon: MapPin, label: 'Postos', short: 'Postos' },
+  { id: 'uniforms', icon: Shirt, label: 'Uniformes', short: 'Unif.' },
+  { id: 'approvals', icon: ClipboardCheck, label: 'Aprovações', short: 'Aprov.' },
+  { id: 'coverage', icon: Repeat2, label: 'Coberturas', short: 'Cobert.' },
+  { id: 'ponto', icon: Clock, label: 'Ponto', short: 'Ponto' },
+  { id: 'settings', icon: Settings, label: 'Configurações', short: 'Config.' },
+];
+
 export default function AdminDashboard() {
-  const { currentUser, logout, notifications } = useApp();
+  const { currentUser, logout, notifications, uniformRequests, overtimeRequests, tickets } = useApp();
   const [activeTab, setActiveTab] = useState<AdminTab>('dashboard');
   const [showNotifications, setShowNotifications] = useState(false);
   const unreadCount = notifications.filter(n => !n.read).length;
 
   if (!currentUser) return null;
 
+  const pendingApprovals =
+    uniformRequests.filter(r => r.status === 'pending').length +
+    overtimeRequests.filter(o => o.status === 'pending').length +
+    tickets.filter(t => t.status === 'open').length;
+  const badges: Partial<Record<AdminTab, number>> = { approvals: pendingApprovals };
+  const current = NAV.find(n => n.id === activeTab)!;
+  const today = new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' });
+
   return (
-    <div className="min-h-screen bg-gray-100">
-      {/* Top Header */}
-      <header className="bg-white border-b border-gray-200 sticky top-0 z-50 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-blue-500 to-cyan-400 flex items-center justify-center">
-              <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-              </svg>
-            </div>
-            <div>
-              <h1 className="text-lg font-bold text-gray-800">SecurOps</h1>
-              <p className="text-xs text-gray-500 -mt-0.5">Painel do Supervisor</p>
-            </div>
+    <div className="min-h-screen bg-canvas">
+      {/* Sidebar (desktop) */}
+      <aside className="hidden lg:flex fixed inset-y-0 left-0 w-64 flex-col bg-ink text-gray-300 z-40">
+        <div className="flex items-center gap-3 px-6 h-16 border-b border-white/5">
+          <div className="w-9 h-9 rounded-xl bg-white/10 border border-white/10 flex items-center justify-center">
+            <ShieldCheck className="w-5 h-5 text-signal" strokeWidth={2.2} />
           </div>
-          <div className="flex items-center gap-3">
-            <button onClick={() => setShowNotifications(!showNotifications)} className="relative p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-              </svg>
-              {unreadCount > 0 && (
-                <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-red-500 text-white text-[10px] rounded-full flex items-center justify-center font-bold">{unreadCount}</span>
-              )}
-            </button>
-            <div className="flex items-center gap-2 border-l border-gray-200 pl-3">
-              <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 text-sm font-bold">
-                {currentUser.name.charAt(0)}
-              </div>
-              <div className="hidden sm:block">
-                <p className="text-sm font-medium text-gray-700">{currentUser.name}</p>
-                <p className="text-xs text-gray-400">Supervisor</p>
-              </div>
-            </div>
-            <button onClick={logout} className="p-2 text-gray-400 hover:text-red-500 transition" title="Sair">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-              </svg>
-            </button>
+          <div className="leading-tight">
+            <p className="font-display text-lg font-semibold text-white">SecurOps</p>
+            <p className="text-[11px] text-gray-500">Painel do supervisor</p>
           </div>
         </div>
-      </header>
 
-      {/* Notifications Dropdown */}
-      {showNotifications && <NotificationsPanel onClose={() => setShowNotifications(false)} />}
-
-      <div className="max-w-7xl mx-auto px-4 py-6 flex gap-6">
-        {/* Sidebar */}
-        <aside className="w-56 shrink-0 hidden lg:block">
-          <nav className="bg-white rounded-xl shadow-sm border border-gray-200 p-2 space-y-1 sticky top-20">
-            {[
-              { id: 'dashboard' as AdminTab, icon: '📊', label: 'Dashboard' },
-              { id: 'posts' as AdminTab, icon: '📍', label: 'Postos' },
-              { id: 'uniforms' as AdminTab, icon: '👔', label: 'Uniformes' },
-              { id: 'approvals' as AdminTab, icon: '✅', label: 'Aprovações' },
-              { id: 'coverage' as AdminTab, icon: '🔄', label: 'Coberturas' },
-              { id: 'ponto' as AdminTab, icon: '⏱️', label: 'Ponto' },
-              { id: 'settings' as AdminTab, icon: '⚙️', label: 'Configurações' },
-            ].map(item => (
+        <nav className="flex-1 overflow-y-auto px-3 py-5 space-y-1" aria-label="Menu principal">
+          {NAV.map(item => {
+            const Icon = item.icon;
+            const active = activeTab === item.id;
+            const badge = badges[item.id];
+            return (
               <button
                 key={item.id}
                 onClick={() => setActiveTab(item.id)}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition ${
-                  activeTab === item.id ? 'bg-blue-50 text-blue-700' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-800'
+                aria-current={active ? 'page' : undefined}
+                className={`relative w-full flex items-center gap-3 pl-4 pr-3 py-2.5 rounded-xl text-sm font-medium transition ${
+                  active ? 'bg-white/10 text-white' : 'text-gray-400 hover:bg-white/5 hover:text-gray-100'
                 }`}
               >
-                <span>{item.icon}</span>
-                {item.label}
+                {active && <span className="absolute left-0 top-2 bottom-2 w-1 rounded-r-full bg-signal" />}
+                <Icon className="w-[18px] h-[18px] shrink-0" strokeWidth={active ? 2.3 : 1.9} />
+                <span className="flex-1 text-left">{item.label}</span>
+                {badge ? (
+                  <span className="min-w-5 h-5 px-1.5 rounded-full bg-signal text-ink text-[11px] font-bold flex items-center justify-center">
+                    {badge}
+                  </span>
+                ) : null}
               </button>
-            ))}
-          </nav>
-        </aside>
+            );
+          })}
+        </nav>
 
-        {/* Mobile Tabs */}
-        <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-50 shadow-lg">
-          <div className="grid grid-cols-7">
-            {[
-              { id: 'dashboard' as AdminTab, icon: '📊', label: 'Painel' },
-              { id: 'posts' as AdminTab, icon: '📍', label: 'Postos' },
-              { id: 'uniforms' as AdminTab, icon: '👔', label: 'Unif.' },
-              { id: 'approvals' as AdminTab, icon: '✅', label: 'Aprov.' },
-              { id: 'coverage' as AdminTab, icon: '🔄', label: 'Cobert.' },
-              { id: 'ponto' as AdminTab, icon: '⏱️', label: 'Ponto' },
-              { id: 'settings' as AdminTab, icon: '⚙️', label: 'Config.' },
-            ].map(tab => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`flex flex-col items-center py-2 px-1 ${activeTab === tab.id ? 'text-blue-600' : 'text-gray-500'}`}
-              >
-                <span className="text-lg">{tab.icon}</span>
-                <span className="text-[9px] mt-0.5">{tab.label}</span>
-              </button>
-            ))}
+        <div className="p-3 border-t border-white/5">
+          <div className="flex items-center gap-3 p-2 rounded-xl">
+            <div className="w-9 h-9 rounded-full bg-blue-600 text-white flex items-center justify-center text-sm font-bold">
+              {currentUser.name.charAt(0)}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-white truncate">{currentUser.name}</p>
+              <p className="text-xs text-gray-500">Supervisor</p>
+            </div>
+            <button
+              onClick={logout}
+              title="Sair"
+              aria-label="Sair"
+              className="p-2 text-gray-500 hover:text-white hover:bg-white/10 rounded-lg transition"
+            >
+              <LogOut className="w-4 h-4" />
+            </button>
           </div>
         </div>
+      </aside>
 
-        {/* Main Content */}
-        <main className="flex-1 min-w-0 pb-20 lg:pb-0">
+      <div className="lg:pl-64">
+        {/* Topbar */}
+        <header className="sticky top-0 z-30 bg-canvas/85 backdrop-blur-md border-b border-gray-200/70">
+          <div className="max-w-6xl mx-auto px-4 sm:px-8 h-16 flex items-center justify-between">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="lg:hidden w-9 h-9 rounded-xl bg-ink flex items-center justify-center">
+                <ShieldCheck className="w-5 h-5 text-signal" strokeWidth={2.2} />
+              </div>
+              <div className="min-w-0">
+                <h1 className="font-display text-lg sm:text-xl font-semibold text-gray-900 truncate">{current.label}</h1>
+                <p className="text-xs text-gray-500 first-letter:uppercase hidden sm:block">{today}</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => setShowNotifications(!showNotifications)}
+                aria-label="Notificações"
+                className="relative p-2.5 text-gray-600 hover:bg-white hover:shadow-sm rounded-xl transition"
+              >
+                <Bell className="w-5 h-5" />
+                {unreadCount > 0 && (
+                  <span className="absolute top-1 right-1 min-w-4 h-4 px-1 bg-red-500 text-white text-[10px] rounded-full flex items-center justify-center font-bold">
+                    {unreadCount}
+                  </span>
+                )}
+              </button>
+              <button
+                onClick={logout}
+                aria-label="Sair"
+                className="lg:hidden p-2.5 text-gray-500 hover:text-red-600 hover:bg-white rounded-xl transition"
+              >
+                <LogOut className="w-5 h-5" />
+              </button>
+            </div>
+          </div>
+        </header>
+
+        {showNotifications && <NotificationsPanel onClose={() => setShowNotifications(false)} />}
+
+        <main className="max-w-6xl mx-auto px-4 sm:px-8 py-6 pb-28 lg:pb-10">
           {activeTab === 'dashboard' && <DashboardView />}
           {activeTab === 'posts' && <PostsView />}
           {activeTab === 'uniforms' && <UniformsView />}
@@ -119,183 +163,273 @@ export default function AdminDashboard() {
           {activeTab === 'settings' && <SettingsView />}
         </main>
       </div>
+
+      {/* Navegação inferior (mobile) */}
+      <nav
+        className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-ink text-gray-400 border-t border-white/10"
+        style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
+        aria-label="Menu principal"
+      >
+        <div className="grid grid-cols-7">
+          {NAV.map(tab => {
+            const Icon = tab.icon;
+            const active = activeTab === tab.id;
+            const badge = badges[tab.id];
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                aria-current={active ? 'page' : undefined}
+                className={`relative flex flex-col items-center py-2.5 px-1 transition ${active ? 'text-white' : 'hover:text-gray-200'}`}
+              >
+                {active && <span className="absolute top-0 left-3 right-3 h-0.5 rounded-b-full bg-signal" />}
+                <span className="relative">
+                  <Icon className="w-5 h-5" strokeWidth={active ? 2.3 : 1.8} />
+                  {badge ? <span className="absolute -top-1 -right-2 w-2 h-2 rounded-full bg-signal" /> : null}
+                </span>
+                <span className="text-[10px] mt-1 font-medium">{tab.short}</span>
+              </button>
+            );
+          })}
+        </div>
+      </nav>
     </div>
   );
 }
 
 function NotificationsPanel({ onClose }: { onClose: () => void }) {
   const { notifications, markNotificationRead } = useApp();
+  const iconFor = (type: string) =>
+    type === 'alert' ? (
+      <span className="w-8 h-8 rounded-lg bg-red-50 text-red-600 flex items-center justify-center"><AlertTriangle className="w-4 h-4" /></span>
+    ) : type === 'success' ? (
+      <span className="w-8 h-8 rounded-lg bg-green-50 text-green-600 flex items-center justify-center"><CheckCircle2 className="w-4 h-4" /></span>
+    ) : (
+      <span className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center"><Info className="w-4 h-4" /></span>
+    );
+
   return (
     <div className="fixed inset-0 z-40" onClick={onClose}>
-      <div className="absolute top-16 right-4 w-80 bg-white rounded-xl shadow-2xl border border-gray-200 max-h-96 overflow-y-auto" onClick={e => e.stopPropagation()}>
-        <div className="p-4 border-b border-gray-100">
-          <h3 className="font-semibold text-gray-800">Notificações</h3>
+      <div
+        className="animate-slide-up absolute top-16 right-3 sm:right-8 w-[calc(100vw-1.5rem)] sm:w-96 bg-white rounded-2xl shadow-2xl border border-gray-200 max-h-[28rem] overflow-y-auto"
+        onClick={e => e.stopPropagation()}
+      >
+        <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between sticky top-0 bg-white">
+          <h3 className="font-semibold text-gray-900">Notificações</h3>
+          <span className="text-xs text-gray-500">{notifications.filter(n => !n.read).length} não lidas</span>
         </div>
-        <div className="divide-y divide-gray-50">
-          {notifications.map(n => (
-            <div key={n.id} className={`p-3 hover:bg-gray-50 cursor-pointer ${!n.read ? 'bg-blue-50/50' : ''}`} onClick={() => markNotificationRead(n.id)}>
-              <div className="flex items-start gap-2">
-                <span className="text-sm mt-0.5">
-                  {n.type === 'alert' ? '🚨' : n.type === 'success' ? '✅' : 'ℹ️'}
-                </span>
-                <div className="flex-1">
-                  <p className="text-sm text-gray-700">{n.message}</p>
-                  <p className="text-xs text-gray-400 mt-0.5">{new Date(n.date).toLocaleString('pt-BR')}</p>
+        {notifications.length === 0 ? (
+          <p className="p-8 text-center text-sm text-gray-500">Nenhuma notificação por aqui.</p>
+        ) : (
+          <div className="divide-y divide-gray-100">
+            {notifications.map(n => (
+              <div
+                key={n.id}
+                className={`px-5 py-3.5 hover:bg-gray-50 cursor-pointer ${!n.read ? 'bg-blue-50/40' : ''}`}
+                onClick={() => markNotificationRead(n.id)}
+              >
+                <div className="flex items-start gap-3">
+                  {iconFor(n.type)}
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm text-gray-800">{n.message}</p>
+                    <p className="text-xs text-gray-400 mt-1">{new Date(n.date).toLocaleString('pt-BR')}</p>
+                  </div>
+                  {!n.read && <span className="w-2 h-2 bg-blue-500 rounded-full mt-2 shrink-0"></span>}
                 </div>
-                {!n.read && <span className="w-2 h-2 bg-blue-500 rounded-full mt-1.5"></span>}
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
 }
 
+const statusMeta = {
+  ok: { label: 'Coberto', dot: 'bg-emerald-500', bar: 'bg-emerald-400', beacon: 'rgb(16 185 129 / 0.5)', text: 'text-emerald-700', chip: 'bg-emerald-50 text-emerald-700' },
+  warning: { label: 'Atenção', dot: 'bg-amber-500', bar: 'bg-amber-400', beacon: 'rgb(245 158 11 / 0.55)', text: 'text-amber-700', chip: 'bg-amber-50 text-amber-700' },
+  critical: { label: 'Crítico', dot: 'bg-red-600', bar: 'bg-red-600', beacon: 'rgb(239 68 68 / 0.55)', text: 'text-red-700', chip: 'bg-red-50 text-red-700' },
+} as const;
+
+const riskMeta = {
+  high: { label: 'Risco alto', cls: 'bg-red-50 text-red-700' },
+  medium: { label: 'Risco médio', cls: 'bg-amber-50 text-amber-700' },
+  low: { label: 'Risco baixo', cls: 'bg-emerald-50 text-emerald-700' },
+} as const;
+
+function MetricTile({ label, value, hint, icon: Icon, tone }: { label: string; value: number; hint: string; icon: LucideIcon; tone: string }) {
+  return (
+    <div className="bg-white rounded-2xl p-5 border border-gray-200 shadow-sm">
+      <div className="flex items-start justify-between">
+        <p className="text-sm text-gray-500">{label}</p>
+        <span className={`w-8 h-8 rounded-lg flex items-center justify-center ${tone}`}>
+          <Icon className="w-4 h-4" />
+        </span>
+      </div>
+      <p className="font-display text-4xl font-semibold text-gray-900 mt-3 tabular-nums">{value}</p>
+      <p className="text-xs text-gray-400 mt-1">{hint}</p>
+    </div>
+  );
+}
+
 function DashboardView() {
-  const { posts, uniformRequests, tickets, coverages, overtimeRequests } = useApp();
-  
-  const okPosts = posts.filter(p => p.status === 'ok').length;
-  const warningPosts = posts.filter(p => p.status === 'warning').length;
-  const criticalPosts = posts.filter(p => p.status === 'critical').length;
+  const { posts, postAllocations, uniformRequests, tickets, coverages, overtimeRequests } = useApp();
+
+  // O status vem da alocação real de vigilantes (mesma regra da tela Postos)
+  const stateOf = (p: (typeof posts)[number]): 'ok' | 'warning' | 'critical' => {
+    const n = (postAllocations[p.id] || []).length;
+    return n === 0 ? 'critical' : n < p.requiredGuards ? 'warning' : 'ok';
+  };
+  const okPosts = posts.filter(p => stateOf(p) === 'ok').length;
+  const warningPosts = posts.filter(p => stateOf(p) === 'warning').length;
+  const criticalPosts = posts.filter(p => stateOf(p) === 'critical').length;
   const pendingUniforms = uniformRequests.filter(r => r.status === 'pending').length;
   const pontoAlerts = 2; // Simulated: guards without today's record
   const openTickets = tickets.filter(t => t.status === 'open').length;
   const pendingHE = overtimeRequests.filter(o => o.status === 'pending').length;
   const activeCoverages = coverages.filter(c => c.status === 'active').length;
+  const total = posts.length || 1;
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold text-gray-800">Dashboard Operacional</h2>
-        <p className="text-gray-500 text-sm">Visão geral em tempo real</p>
-      </div>
+      {/* Situação geral */}
+      <section className="relative overflow-hidden rounded-3xl bg-ink text-white p-6 sm:p-8">
+        <div className="grid-ink absolute inset-0 opacity-70" aria-hidden />
+        <div className="relative grid gap-8 lg:grid-cols-[auto_1fr] lg:items-end">
+          <div>
+            <p className="text-sm text-gray-400">Postos cobertos agora</p>
+            <p className="font-display mt-2 flex items-baseline gap-2">
+              <span className="text-7xl font-semibold tabular-nums leading-none">{okPosts}</span>
+              <span className="text-2xl text-gray-400">de {posts.length}</span>
+            </p>
+          </div>
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
-        <div className="bg-white rounded-xl p-5 shadow-sm border border-gray-200">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-xs text-gray-500 font-medium">Postos OK</p>
-              <p className="text-3xl font-bold text-green-600 mt-1">{okPosts}</p>
+          <div>
+            <div className="flex h-3 rounded-full overflow-hidden bg-white/10 gap-0.5" role="img" aria-label={`${okPosts} cobertos, ${warningPosts} em atenção, ${criticalPosts} críticos`}>
+              {okPosts > 0 && <div className="bg-emerald-400" style={{ width: `${(okPosts / total) * 100}%` }} />}
+              {warningPosts > 0 && <div className="bg-amber-400" style={{ width: `${(warningPosts / total) * 100}%` }} />}
+              {criticalPosts > 0 && <div className="bg-red-500" style={{ width: `${(criticalPosts / total) * 100}%` }} />}
             </div>
-            <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center text-green-600">✓</div>
+            <div className="mt-4 flex flex-wrap gap-x-8 gap-y-2 text-sm">
+              <span className="flex items-center gap-2 text-gray-300"><span className="w-2.5 h-2.5 rounded-full bg-emerald-400" />{okPosts} cobertos</span>
+              <span className="flex items-center gap-2 text-gray-300"><span className="w-2.5 h-2.5 rounded-full bg-amber-400" />{warningPosts} em atenção</span>
+              <span className="flex items-center gap-2 text-gray-300"><span className="w-2.5 h-2.5 rounded-full bg-red-500" />{criticalPosts} críticos</span>
+            </div>
           </div>
         </div>
-        <div className="bg-white rounded-xl p-5 shadow-sm border border-gray-200">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-xs text-gray-500 font-medium">Alertas</p>
-              <p className="text-3xl font-bold text-orange-500 mt-1">{warningPosts + criticalPosts}</p>
-            </div>
-            <div className="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center text-orange-500">⚠</div>
-          </div>
-        </div>
-        <div className="bg-white rounded-xl p-5 shadow-sm border border-gray-200">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-xs text-gray-500 font-medium">Pendências</p>
-              <p className="text-3xl font-bold text-blue-600 mt-1">{pendingUniforms + pendingHE}</p>
-            </div>
-            <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center text-blue-600">📋</div>
-          </div>
-        </div>
-        <div className="bg-white rounded-xl p-5 shadow-sm border border-gray-200">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-xs text-gray-500 font-medium">Sem Registro Hoje</p>
-              <p className="text-3xl font-bold text-red-500 mt-1">{pontoAlerts}</p>
-            </div>
-            <div className="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center text-red-500">⏱️</div>
-          </div>
-        </div>
-        <div className="bg-white rounded-xl p-5 shadow-sm border border-gray-200">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-xs text-gray-500 font-medium">Coberturas Ativas</p>
-              <p className="text-3xl font-bold text-purple-600 mt-1">{activeCoverages}</p>
-            </div>
-            <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center text-purple-600">🔄</div>
-          </div>
-        </div>
-      </div>
+      </section>
 
-      {/* Status Map */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
-        <h3 className="font-semibold text-gray-800 mb-4">Status dos Postos</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-          {posts.map(post => (
-            <div key={post.id} className={`rounded-lg p-4 border-l-4 ${
-              post.status === 'ok' ? 'bg-green-50 border-green-500' :
-              post.status === 'warning' ? 'bg-yellow-50 border-yellow-500' :
-              'bg-red-50 border-red-500'
-            }`}>
-              <div className="flex justify-between items-start">
-                <div>
-                  <p className="font-semibold text-gray-800 text-sm">{post.name}</p>
-                  <p className="text-xs text-gray-500 mt-0.5">{post.address}</p>
-                </div>
-                <span className={`w-3 h-3 rounded-full ${
-                  post.status === 'ok' ? 'bg-green-500' :
-                  post.status === 'warning' ? 'bg-yellow-500 animate-pulse' :
-                  'bg-red-500 animate-pulse'
-                }`}></span>
-              </div>
-              <div className="flex gap-3 mt-3 text-xs text-gray-600">
-                <span>Risco: <strong className={post.risk === 'high' ? 'text-red-600' : post.risk === 'medium' ? 'text-yellow-600' : 'text-green-600'}>{post.risk === 'high' ? 'Alto' : post.risk === 'medium' ? 'Médio' : 'Baixo'}</strong></span>
-                <span>Vigilantes: <strong>{post.requiredGuards}</strong></span>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
+      {/* Métricas */}
+      <section className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <MetricTile label="Pendências" value={pendingUniforms + pendingHE} hint="Uniformes e horas extras" icon={ClipboardCheck} tone="bg-blue-50 text-blue-600" />
+        <MetricTile label="Chamados abertos" value={openTickets} hint="Aguardando atendimento" icon={Wrench} tone="bg-amber-50 text-amber-600" />
+        <MetricTile label="Sem registro hoje" value={pontoAlerts} hint="Vigilantes sem ponto" icon={Clock} tone="bg-red-50 text-red-600" />
+        <MetricTile label="Coberturas ativas" value={activeCoverages} hint="Substituições em andamento" icon={Repeat2} tone="bg-violet-50 text-violet-600" />
+      </section>
 
-      {/* Recent Activity */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
-          <h3 className="font-semibold text-gray-800 mb-4">Chamados Recentes</h3>
-          <div className="space-y-3">
-            {tickets.slice(0, 4).map(t => (
-              <div key={t.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50">
-                <span className={`w-2 h-2 rounded-full ${t.priority === 'critical' ? 'bg-red-500' : t.priority === 'high' ? 'bg-orange-500' : t.priority === 'medium' ? 'bg-yellow-500' : 'bg-gray-400'}`}></span>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm text-gray-700 truncate">{t.description}</p>
-                  <p className="text-xs text-gray-400">{t.postName} • {t.date}</p>
+      {/* Painel de postos */}
+      <section>
+        <div className="flex items-end justify-between mb-3">
+          <h2 className="font-display text-xl font-semibold text-gray-900">Postos</h2>
+          <p className="text-xs text-gray-500">Vigilantes alocados / necessários</p>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
+          {posts.map(post => {
+            const state = stateOf(post);
+            const s = statusMeta[state];
+            const r = riskMeta[post.risk];
+            const allocated = (postAllocations[post.id] || []).length;
+            const pct = Math.min(100, (allocated / Math.max(post.requiredGuards, 1)) * 100);
+            return (
+              <article key={post.id} className="bg-white rounded-2xl p-5 border border-gray-200 shadow-sm">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <h3 className="font-display font-semibold text-gray-900 truncate">{post.name}</h3>
+                    <p className="text-xs text-gray-500 mt-0.5 truncate">{post.address}</p>
+                  </div>
+                  <span className="flex items-center gap-2 shrink-0">
+                    <span className={`text-xs font-medium ${s.text}`}>{s.label}</span>
+                    <span
+                      className={`w-2.5 h-2.5 rounded-full ${s.dot} ${state === 'ok' ? '' : 'beacon'}`}
+                      style={{ ['--beacon' as string]: s.beacon }}
+                    />
+                  </span>
                 </div>
-                <span className={`text-xs px-2 py-0.5 rounded-full ${t.status === 'open' ? 'bg-blue-100 text-blue-700' : t.status === 'in_progress' ? 'bg-yellow-100 text-yellow-700' : 'bg-green-100 text-green-700'}`}>
-                  {t.status === 'open' ? 'Aberto' : t.status === 'in_progress' ? 'Andamento' : 'Resolvido'}
-                </span>
-              </div>
-            ))}
-          </div>
+
+                <div className="mt-4">
+                  <div className="flex items-baseline justify-between text-sm">
+                    <span className="text-gray-500">Vigilantes</span>
+                    <span className="font-semibold text-gray-900 tabular-nums">{allocated} / {post.requiredGuards}</span>
+                  </div>
+                  <div className="mt-2 h-1.5 rounded-full bg-gray-100 overflow-hidden">
+                    <div className={`h-full rounded-full ${s.bar}`} style={{ width: `${pct}%` }} />
+                  </div>
+                </div>
+
+                <div className="mt-4 flex items-center justify-between text-xs">
+                  <span className={`px-2 py-1 rounded-md font-medium ${r.cls}`}>{r.label}</span>
+                  <span className="text-gray-500">Ronda a cada {post.roundInterval} min</span>
+                </div>
+              </article>
+            );
+          })}
+        </div>
+      </section>
+
+      {/* Atividade */}
+      <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5">
+          <h3 className="font-display font-semibold text-gray-900 mb-3">Chamados recentes</h3>
+          {tickets.length === 0 ? (
+            <p className="text-sm text-gray-500 py-6 text-center">Nenhum chamado aberto até agora.</p>
+          ) : (
+            <div className="space-y-1">
+              {tickets.slice(0, 4).map(t => (
+                <div key={t.id} className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-gray-50">
+                  <span className={`w-2 h-2 rounded-full shrink-0 ${t.priority === 'critical' ? 'bg-red-600' : t.priority === 'high' ? 'bg-orange-500' : t.priority === 'medium' ? 'bg-amber-400' : 'bg-gray-300'}`}></span>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm text-gray-800 truncate">{t.description}</p>
+                    <p className="text-xs text-gray-400">{t.postName} · {t.date}</p>
+                  </div>
+                  <span className={`text-xs px-2 py-1 rounded-md font-medium ${t.status === 'open' ? 'bg-blue-50 text-blue-700' : t.status === 'in_progress' ? 'bg-amber-50 text-amber-700' : 'bg-green-50 text-green-700'}`}>
+                    {t.status === 'open' ? 'Aberto' : t.status === 'in_progress' ? 'Andamento' : 'Resolvido'}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
-          <h3 className="font-semibold text-gray-800 mb-4">Fila de Aprovação</h3>
-          <div className="space-y-3">
-            {uniformRequests.filter(r => r.status === 'pending').map(r => (
-              <div key={r.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50">
-                <span className="text-lg">👔</span>
-                <div className="flex-1">
-                  <p className="text-sm text-gray-700">{r.guardName}</p>
-                  <p className="text-xs text-gray-400">{r.itemName} ({r.size}) x{r.quantity}</p>
+        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5">
+          <h3 className="font-display font-semibold text-gray-900 mb-3">Fila de aprovação</h3>
+          {pendingUniforms + pendingHE === 0 ? (
+            <p className="text-sm text-gray-500 py-6 text-center">Tudo em dia. Nenhuma aprovação pendente.</p>
+          ) : (
+            <div className="space-y-1">
+              {uniformRequests.filter(r => r.status === 'pending').map(r => (
+                <div key={r.id} className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-gray-50">
+                  <span className="w-9 h-9 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center shrink-0"><Shirt className="w-4 h-4" /></span>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm text-gray-800">{r.guardName}</p>
+                    <p className="text-xs text-gray-400">{r.itemName} ({r.size}) × {r.quantity}</p>
+                  </div>
+                  <span className="text-xs px-2 py-1 rounded-md bg-amber-50 text-amber-700 font-medium">Pendente</span>
                 </div>
-                <span className="text-xs px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-700">Pendente</span>
-              </div>
-            ))}
-            {overtimeRequests.filter(o => o.status === 'pending').map(o => (
-              <div key={o.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50">
-                <span className="text-lg">⏰</span>
-                <div className="flex-1">
-                  <p className="text-sm text-gray-700">{o.guardName}</p>
-                  <p className="text-xs text-gray-400">{o.date} {o.startTime}-{o.endTime}</p>
+              ))}
+              {overtimeRequests.filter(o => o.status === 'pending').map(o => (
+                <div key={o.id} className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-gray-50">
+                  <span className="w-9 h-9 rounded-lg bg-violet-50 text-violet-600 flex items-center justify-center shrink-0"><Hourglass className="w-4 h-4" /></span>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm text-gray-800">{o.guardName}</p>
+                    <p className="text-xs text-gray-400">{o.date} · {o.startTime}–{o.endTime}</p>
+                  </div>
+                  <span className="text-xs px-2 py-1 rounded-md bg-amber-50 text-amber-700 font-medium">Pendente</span>
                 </div>
-                <span className="text-xs px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-700">Pendente</span>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
-      </div>
+      </section>
     </div>
   );
 }
@@ -395,9 +529,9 @@ function PostsView() {
             >
               {/* Header do card */}
               <div className={`p-4 text-white relative ${
-                isEmpty ? 'bg-gradient-to-r from-red-500 to-red-600' :
-                isPartial ? 'bg-gradient-to-r from-yellow-500 to-orange-500' :
-                'bg-gradient-to-r from-green-500 to-emerald-500'
+                isEmpty ? 'bg-red-600' :
+                isPartial ? 'bg-amber-500' :
+                'bg-emerald-600'
               }`}>
                 <button
                   onClick={(e) => { e.stopPropagation(); setEditingPost(post.id); }}
@@ -453,7 +587,7 @@ function PostsView() {
                   <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Vigilantes Alocados</p>
                   {allocatedGuards.length === 0 ? (
                     <div className="text-center py-4 bg-red-50 rounded-lg border border-dashed border-red-200">
-                      <p className="text-red-500 text-sm font-medium">⚠️ Posto descoberto</p>
+                      <p className="text-red-500 text-sm font-medium">Posto descoberto</p>
                       <p className="text-red-400 text-xs mt-1">Nenhum vigilante alocado</p>
                     </div>
                   ) : (
@@ -511,7 +645,7 @@ function PostsView() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4" onClick={() => setShowAllocateModal(false)}>
           <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden animate-slide-up" onClick={e => e.stopPropagation()}>
             {/* Header */}
-            <div className="bg-gradient-to-r from-blue-600 to-indigo-600 p-5 text-white">
+            <div className="bg-ink p-5 text-white">
               <div className="flex justify-between items-start">
                 <div>
                   <p className="text-blue-100 text-xs font-medium uppercase tracking-wider">Alocar Vigilante</p>
@@ -564,7 +698,7 @@ function PostsView() {
                           <p className="text-sm font-semibold text-gray-800">{guard.name}</p>
                           <p className="text-xs text-gray-500">{guard.matricula}</p>
                           {isAllocatedHere && <p className="text-[10px] text-green-600 font-medium">✓ Já alocado aqui</p>}
-                          {isAllocatedElsewhere && <p className="text-[10px] text-yellow-600">📍 Em: {otherPost?.name}</p>}
+                          {isAllocatedElsewhere && <p className="text-[10px] text-yellow-600">Em: {otherPost?.name}</p>}
                           {!isAllocatedHere && !isAllocatedElsewhere && <p className="text-[10px] text-gray-400">Sem posto atribuído</p>}
                         </div>
                       </div>
@@ -595,7 +729,7 @@ function PostsView() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4" onClick={() => setShowNewPostModal(false)}>
           <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden animate-slide-up max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
             {/* Header */}
-            <div className="bg-gradient-to-r from-blue-600 to-indigo-600 p-5 text-white sticky top-0 z-10">
+            <div className="bg-ink p-5 text-white sticky top-0 z-10">
               <div className="flex justify-between items-start">
                 <div>
                   <p className="text-blue-100 text-xs font-medium uppercase tracking-wider">Cadastro</p>
@@ -645,9 +779,9 @@ function PostsView() {
                     onChange={e => setNewPost({ ...newPost, risk: e.target.value as 'low' | 'medium' | 'high' })}
                     className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
                   >
-                    <option value="low">🟢 Baixo</option>
-                    <option value="medium">🟡 Médio</option>
-                    <option value="high">🔴 Alto</option>
+                    <option value="low">Baixo</option>
+                    <option value="medium">Médio</option>
+                    <option value="high">Alto</option>
                   </select>
                 </div>
 
@@ -719,7 +853,7 @@ function PostsView() {
                   />
                 </div>
               </div>
-              <p className="text-[10px] text-gray-400 -mt-2">💡 Coordenadas opcionais - usadas para geolocalização do check-in</p>
+              <p className="text-[10px] text-gray-400 -mt-2">Coordenadas opcionais - usadas para geolocalização do check-in</p>
 
               {/* Preview */}
               {newPost.name && newPost.address && (
@@ -745,7 +879,7 @@ function PostsView() {
                 <button
                   onClick={handleCreatePost}
                   disabled={!newPost.name || !newPost.address}
-                  className="flex-[2] py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl font-semibold text-sm shadow-lg shadow-blue-500/30 hover:shadow-blue-500/50 active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none"
+                  className="flex-[2] py-3 bg-ink text-white rounded-xl font-semibold text-sm shadow-lg shadow-blue-500/30 hover:shadow-blue-500/50 active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none"
                 >
                   ✓ Cadastrar Posto
                 </button>
@@ -762,7 +896,7 @@ function PostsView() {
         return (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4" onClick={() => setEditingPost(null)}>
             <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden animate-slide-up max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
-              <div className="bg-gradient-to-r from-orange-500 to-amber-500 p-5 text-white sticky top-0 z-10">
+              <div className="bg-amber-500 p-5 text-white sticky top-0 z-10">
                 <div className="flex justify-between items-start">
                   <div>
                     <p className="text-orange-100 text-xs font-medium uppercase tracking-wider">Editar</p>
@@ -834,9 +968,9 @@ function EditPostForm({ post, onSave, onDelete, onCancel }: {
             onChange={e => setRisk(e.target.value)}
             className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400"
           >
-            <option value="low">🟢 Baixo</option>
-            <option value="medium">🟡 Médio</option>
-            <option value="high">🔴 Alto</option>
+            <option value="low">Baixo</option>
+            <option value="medium">Médio</option>
+            <option value="high">Alto</option>
           </select>
         </div>
         <div>
@@ -872,7 +1006,7 @@ function EditPostForm({ post, onSave, onDelete, onCancel }: {
             onClick={() => setConfirmDelete(true)}
             className="py-3 px-4 border-2 border-red-200 text-red-500 rounded-xl font-medium text-sm hover:bg-red-50 transition"
           >
-            🗑️ Excluir
+            Excluir
           </button>
           <button onClick={onCancel} className="flex-1 py-3 border-2 border-gray-200 text-gray-500 rounded-xl font-medium text-sm hover:bg-gray-50 transition">
             Cancelar
@@ -880,14 +1014,14 @@ function EditPostForm({ post, onSave, onDelete, onCancel }: {
           <button
             onClick={() => onSave({ name, address, risk, requiredGuards, roundInterval })}
             disabled={!name || !address}
-            className="flex-[2] py-3 bg-gradient-to-r from-orange-500 to-amber-500 text-white rounded-xl font-semibold text-sm shadow-lg active:scale-[0.98] transition-all disabled:opacity-50"
+            className="flex-[2] py-3 bg-amber-500 text-white rounded-xl font-semibold text-sm shadow-lg active:scale-[0.98] transition-all disabled:opacity-50"
           >
             ✓ Salvar
           </button>
         </div>
       ) : (
         <div className="bg-red-50 border border-red-200 rounded-xl p-4">
-          <p className="text-sm text-red-700 font-medium mb-2">⚠️ Confirmar exclusão do posto "{post.name}"?</p>
+          <p className="text-sm text-red-700 font-medium mb-2">Confirmar exclusão do posto "{post.name}"?</p>
           <div className="flex gap-2">
             <button onClick={() => setConfirmDelete(false)} className="flex-1 py-2 bg-white border border-gray-200 rounded-lg text-sm">Cancelar</button>
             <button onClick={onDelete} className="flex-1 py-2 bg-red-500 text-white rounded-lg text-sm font-medium hover:bg-red-600">Confirmar Exclusão</button>
@@ -930,7 +1064,7 @@ function UniformsView() {
                 <p className="text-xs text-gray-500">em estoque</p>
               </div>
               <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${item.stock < 10 ? 'bg-red-100 text-red-600' : item.stock < 20 ? 'bg-yellow-100 text-yellow-600' : 'bg-green-100 text-green-600'}`}>
-                {item.stock < 10 ? '⚠️' : item.stock < 20 ? '📦' : '✅'}
+                {item.stock < 10 ? <AlertTriangle className="w-5 h-5" /> : item.stock < 20 ? <Package className="w-5 h-5" /> : <CheckCircle2 className="w-5 h-5" />}
               </div>
             </div>
           </div>
@@ -1036,10 +1170,10 @@ function ApprovalsView() {
   const pendingJustifications = getPendingJustifications();
 
   const tabs = [
-    { id: 'uniforms' as const, label: 'Uniformes', count: pendingUniforms.length, icon: '👔', color: 'yellow' },
-    { id: 'overtime' as const, label: 'Horas Extra', count: pendingHE.length, icon: '⏰', color: 'purple' },
-    { id: 'tickets' as const, label: 'Chamados', count: openTickets.length, icon: '🔧', color: 'blue' },
-    { id: 'justifications' as const, label: 'Justificativas', count: pendingJustifications.length, icon: '📝', color: 'orange' },
+    { id: 'uniforms' as const, label: 'Uniformes', count: pendingUniforms.length, icon: Shirt, color: 'yellow' },
+    { id: 'overtime' as const, label: 'Horas Extra', count: pendingHE.length, icon: Timer, color: 'purple' },
+    { id: 'tickets' as const, label: 'Chamados', count: openTickets.length, icon: Wrench, color: 'blue' },
+    { id: 'justifications' as const, label: 'Justificativas', count: pendingJustifications.length, icon: FileText, color: 'orange' },
   ];
 
   return (
@@ -1063,7 +1197,7 @@ function ApprovalsView() {
               }`}
             >
               <div className="flex items-center justify-center gap-2">
-                <span className="text-lg">{tab.icon}</span>
+                <tab.icon className="w-[18px] h-[18px]" />
                 <span>{tab.label}</span>
                 {tab.count > 0 && (
                   <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${
@@ -1093,7 +1227,7 @@ function ApprovalsView() {
             <div>
               {pendingUniforms.length === 0 ? (
                 <div className="text-center py-12">
-                  <div className="text-6xl mb-4">✓</div>
+                  <CheckCircle2 className="w-12 h-12 mx-auto mb-4 text-emerald-500" strokeWidth={1.5} />
                   <p className="text-gray-500 text-lg font-medium">Nenhuma solicitação pendente</p>
                   <p className="text-gray-400 text-sm mt-1">Todas as solicitações de uniforme foram processadas</p>
                 </div>
@@ -1131,7 +1265,7 @@ function ApprovalsView() {
             <div>
               {pendingHE.length === 0 ? (
                 <div className="text-center py-12">
-                  <div className="text-6xl mb-4">✓</div>
+                  <CheckCircle2 className="w-12 h-12 mx-auto mb-4 text-emerald-500" strokeWidth={1.5} />
                   <p className="text-gray-500 text-lg font-medium">Nenhuma hora extra pendente</p>
                   <p className="text-gray-400 text-sm mt-1">Todas as solicitações de HE foram processadas</p>
                 </div>
@@ -1169,7 +1303,7 @@ function ApprovalsView() {
             <div>
               {openTickets.length === 0 ? (
                 <div className="text-center py-12">
-                  <div className="text-6xl mb-4">✓</div>
+                  <CheckCircle2 className="w-12 h-12 mx-auto mb-4 text-emerald-500" strokeWidth={1.5} />
                   <p className="text-gray-500 text-lg font-medium">Nenhum chamado aberto</p>
                   <p className="text-gray-400 text-sm mt-1">Todos os chamados foram resolvidos</p>
                 </div>
@@ -1179,7 +1313,7 @@ function ApprovalsView() {
                     <div key={t.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition">
                       <div className="flex items-center gap-3">
                         <span className={`w-4 h-4 rounded-full ${
-                          t.priority === 'critical' ? 'bg-red-500' :
+                          t.priority === 'critical' ? 'bg-red-600' :
                           t.priority === 'high' ? 'bg-orange-500' :
                           t.priority === 'medium' ? 'bg-yellow-500' :
                           'bg-gray-400'
@@ -1210,7 +1344,7 @@ function ApprovalsView() {
             <div>
               {pendingJustifications.length === 0 ? (
                 <div className="text-center py-12">
-                  <div className="text-6xl mb-4">✓</div>
+                  <CheckCircle2 className="w-12 h-12 mx-auto mb-4 text-emerald-500" strokeWidth={1.5} />
                   <p className="text-gray-500 text-lg font-medium">Nenhuma justificativa pendente</p>
                   <p className="text-gray-400 text-sm mt-1">Todas as justificativas foram processadas</p>
                 </div>
@@ -1305,7 +1439,7 @@ function CoverageView() {
                   cov.status === 'approved' ? 'bg-blue-200 text-blue-800' :
                   'bg-gray-200 text-gray-700'
                 }`}>
-                  {cov.status === 'active' ? '🟢 Ativa' : cov.status === 'requested' ? '⏳ Aguardando' : cov.status === 'approved' ? '✓ Aprovada' : '✓ Concluída'}
+                  {cov.status === 'active' ? 'Ativa' : cov.status === 'requested' ? 'Aguardando' : cov.status === 'approved' ? '✓ Aprovada' : '✓ Concluída'}
                 </span>
               </div>
               <div className="space-y-2 text-sm">
@@ -1528,7 +1662,7 @@ function PontoView() {
       {/* Detailed View for Selected Guard */}
       {selectedGuard && (
         <div className="bg-white rounded-xl shadow-lg border-2 border-indigo-300 overflow-hidden">
-          <div className="p-4 border-b border-gray-100 bg-gradient-to-r from-indigo-600 to-purple-600 text-white flex items-center justify-between">
+          <div className="p-4 border-b border-gray-100 bg-ink text-white flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center text-white font-bold text-lg">
                 {selectedGuard.name.charAt(0)}
@@ -1661,7 +1795,7 @@ function PontoView() {
         const records = guardRecords[guard.id] || {};
         return (
           <div key={guard.id} className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-            <div className="p-4 border-b border-gray-100 bg-gradient-to-r from-indigo-50 to-purple-50 flex items-center justify-between">
+            <div className="p-4 border-b border-gray-100 bg-gray-50 flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="w-8 h-8 bg-indigo-200 rounded-full flex items-center justify-center text-indigo-700 font-bold text-xs">
                   {guard.name.charAt(0)}
@@ -1741,7 +1875,7 @@ function SettingsView() {
 
       {/* Ticket Categories */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
-        <h3 className="font-semibold text-gray-800 mb-4">🔧 Categorias de Chamados</h3>
+        <h3 className="font-semibold text-gray-800 mb-4">Categorias de Chamados</h3>
         <div className="flex flex-wrap gap-2 mb-4">
           {categories.map((cat, i) => (
             <span key={i} className="inline-flex items-center gap-1 px-3 py-1.5 bg-gray-100 rounded-lg text-sm text-gray-700">
@@ -1769,7 +1903,7 @@ function SettingsView() {
 
       {/* HE Reasons */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
-        <h3 className="font-semibold text-gray-800 mb-4">⏰ Motivos de Hora Extra</h3>
+        <h3 className="font-semibold text-gray-800 mb-4">Motivos de Hora Extra</h3>
         <div className="flex flex-wrap gap-2 mb-4">
           {heReasons.map((reason, i) => (
             <span key={i} className="inline-flex items-center gap-1 px-3 py-1.5 bg-purple-100 rounded-lg text-sm text-purple-700">
@@ -1797,7 +1931,7 @@ function SettingsView() {
 
       {/* General Settings */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
-        <h3 className="font-semibold text-gray-800 mb-4">⚙️ Configurações Gerais</h3>
+        <h3 className="font-semibold text-gray-800 mb-4">Configurações Gerais</h3>
         <div className="space-y-4">
           <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
             <div>
@@ -1844,7 +1978,7 @@ function SettingsView() {
 
       {/* Scale Settings */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
-        <h3 className="font-semibold text-gray-800 mb-4">📅 Modelos de Escala</h3>
+        <h3 className="font-semibold text-gray-800 mb-4">Modelos de Escala</h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="border-2 border-blue-300 bg-blue-50 rounded-xl p-4">
             <h4 className="font-semibold text-blue-800">12x36</h4>

@@ -1,9 +1,114 @@
 @import "tailwindcss";
 
+/* ------------------------------------------------------------------
+   SecurOps design tokens
+   Tailwind v4 lê o @theme abaixo e remapeia as escalas "gray" e "blue"
+   usadas em todas as telas — a paleta nova vale para o app inteiro.
+   ------------------------------------------------------------------ */
+@theme {
+  --font-sans: "Instrument Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-display: "Bricolage Grotesque", "Instrument Sans", ui-sans-serif, system-ui, sans-serif;
+
+  /* Neutros frios (azul-acinzentado, no tom da sidebar) */
+  --color-gray-50: #f6f7fa;
+  --color-gray-100: #eef0f5;
+  --color-gray-200: #e1e5ed;
+  --color-gray-300: #cbd2de;
+  --color-gray-400: #9aa4b6;
+  --color-gray-500: #67748a;
+  --color-gray-600: #4a5568;
+  --color-gray-700: #333f54;
+  --color-gray-800: #1c2740;
+  --color-gray-900: #0f172a;
+
+  /* Azul cobalto — ação primária */
+  --color-blue-50: #eef3ff;
+  --color-blue-100: #dde7ff;
+  --color-blue-200: #bfd0ff;
+  --color-blue-300: #92adff;
+  --color-blue-400: #5f86f8;
+  --color-blue-500: #3a63ee;
+  --color-blue-600: #2748d4;
+  --color-blue-700: #2039ab;
+  --color-blue-800: #1d3187;
+  --color-blue-900: #1b2a69;
+
+  /* Tokens próprios */
+  --color-ink: #0b1220;
+  --color-ink-2: #121b2e;
+  --color-ink-3: #1b2740;
+  --color-canvas: #f2f4f8;
+  --color-signal: #ffb020;
+
+  /* Sombras com tom do ink, sem cinza genérico */
+  --shadow-sm: 0 1px 2px rgb(11 18 32 / 0.05), 0 1px 1px rgb(11 18 32 / 0.03);
+  --shadow-md: 0 4px 12px -2px rgb(11 18 32 / 0.08), 0 2px 4px -2px rgb(11 18 32 / 0.05);
+  --shadow-lg: 0 14px 28px -8px rgb(11 18 32 / 0.18), 0 4px 8px -4px rgb(11 18 32 / 0.08);
+  --shadow-2xl: 0 30px 60px -20px rgb(11 18 32 / 0.45);
+}
+
 @layer base {
+  * {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    margin: 0;
+    font-family: var(--font-sans);
+    background: var(--color-canvas);
+    color: var(--color-gray-800);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-display);
+    letter-spacing: -0.015em;
+  }
+
+  button,
+  [role="button"] {
+    cursor: pointer;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-blue-500);
+    outline-offset: 2px;
+  }
+
+  input,
+  select,
+  textarea {
+    font-family: inherit;
+  }
+
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--color-gray-300);
+    border-radius: 999px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--color-gray-400);
+  }
+}
+
+@layer components {
+  /* Entrada de modais e painéis — responde a uma ação da pessoa */
   @keyframes slide-up {
     from {
-      transform: translateY(100%);
+      transform: translateY(24px);
       opacity: 0;
     }
     to {
@@ -11,38 +116,44 @@
       opacity: 1;
     }
   }
-
   .animate-slide-up {
-    animation: slide-up 0.3s ease-out;
+    animation: slide-up 0.28s cubic-bezier(0.2, 0.8, 0.2, 1);
   }
 
-  * {
-    -webkit-tap-highlight-color: transparent;
+  /* Farol de status: o motivo visual do produto (luz de ronda) */
+  @keyframes beacon {
+    0% {
+      box-shadow: 0 0 0 0 var(--beacon, rgb(239 68 68 / 0.55));
+    }
+    70% {
+      box-shadow: 0 0 0 8px rgb(0 0 0 / 0);
+    }
+    100% {
+      box-shadow: 0 0 0 0 rgb(0 0 0 / 0);
+    }
   }
-  
-  html {
-    scroll-behavior: smooth;
+  .beacon {
+    animation: beacon 1.8s ease-out infinite;
   }
 
-  body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
+  /* Grade técnica de fundo da tela de login */
+  .grid-ink {
+    background-image:
+      linear-gradient(rgb(255 255 255 / 0.05) 1px, transparent 1px),
+      linear-gradient(90deg, rgb(255 255 255 / 0.05) 1px, transparent 1px);
+    background-size: 44px 44px;
+    mask-image: radial-gradient(ellipse at 30% 40%, #000 20%, transparent 75%);
+    -webkit-mask-image: radial-gradient(ellipse at 30% 40%, #000 20%, transparent 75%);
   }
+}
 
-  /* Custom scrollbar */
-  ::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
-  }
-  ::-webkit-scrollbar-track {
-    background: transparent;
-  }
-  ::-webkit-scrollbar-thumb {
-    background: #cbd5e1;
-    border-radius: 3px;
-  }
-  ::-webkit-scrollbar-thumb:hover {
-    background: #94a3b8;
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }

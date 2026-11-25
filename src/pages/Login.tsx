@@ -3,8 +3,8 @@ import { ShieldCheck, UserRound, LockKeyhole, Eye, EyeOff, HardHat, ClipboardLis
 import { useApp } from '../context';
 
 const sampleBoard = [
-  { name: 'Edifício Central', note: '2 de 2 vigilantes', tone: 'ok' },
-  { name: 'Depósito Industrial', note: '1 de 2 vigilantes', tone: 'warning' },
+  { name: 'Edifício Central', note: '2 de 2 colaboradores', tone: 'ok' },
+  { name: 'Depósito Industrial', note: '1 de 2 colaboradores', tone: 'warning' },
   { name: 'Escola Municipal', note: 'Posto descoberto', tone: 'critical' },
 ] as const;
 
@@ -48,17 +48,17 @@ export default function Login() {
           <div className="w-10 h-10 rounded-xl bg-white/10 border border-white/15 flex items-center justify-center">
             <ShieldCheck className="w-5 h-5 text-signal" strokeWidth={2.2} />
           </div>
-          <span className="font-display text-xl font-semibold tracking-tight">SecurOps</span>
+          <span className="font-display text-xl font-semibold tracking-tight">GestPosto</span>
         </div>
 
         <div className="relative max-w-xl">
           <h1 className="font-display text-5xl xl:text-6xl font-semibold leading-[1.02] tracking-tight">
             Cada posto coberto.
             <br />
-            Cada ronda registrada.
+            Cada equipe conectada.
           </h1>
           <p className="mt-6 text-lg text-gray-300 max-w-md leading-relaxed">
-            Escalas, ponto, uniformes e chamados da sua equipe de segurança em um só painel.
+            Escalas, ponto e gestão de equipes de limpeza, portaria e recepção em um só painel.
           </p>
 
           {/* Mini painel ilustrativo */}
@@ -82,7 +82,7 @@ export default function Login() {
           </div>
         </div>
 
-        <p className="relative text-xs text-gray-500">Gestão de segurança operacional</p>
+        <p className="relative text-xs text-gray-500">Gestão de equipes terceirizadas</p>
       </section>
 
       {/* Formulário */}
@@ -92,7 +92,7 @@ export default function Login() {
             <div className="w-10 h-10 rounded-xl bg-ink flex items-center justify-center">
               <ShieldCheck className="w-5 h-5 text-signal" strokeWidth={2.2} />
             </div>
-            <span className="font-display text-xl font-semibold text-ink">SecurOps</span>
+            <span className="font-display text-xl font-semibold text-ink">GestPosto</span>
           </div>
 
           <h2 className="font-display text-3xl font-semibold text-ink">Entrar</h2>
@@ -173,7 +173,7 @@ export default function Login() {
                   <HardHat className="w-4.5 h-4.5" />
                 </span>
                 <span>
-                  <span className="block text-sm font-semibold text-gray-800">Vigilante</span>
+                  <span className="block text-sm font-semibold text-gray-800">Colaborador</span>
                   <span className="block text-xs text-gray-500 font-mono">V001</span>
                 </span>
               </button>

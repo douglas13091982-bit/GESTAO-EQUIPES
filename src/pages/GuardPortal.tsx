@@ -144,7 +144,7 @@ export default function GuardPortal() {
         style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
         aria-label="Menu principal"
       >
-        <div className="grid grid-cols-5 px-2 py-2 gap-1">
+        <div className="grid grid-cols-3 px-3 py-3 gap-2">
           {GUARD_NAV.map(tab => {
             const Icon = tab.icon;
             const active = activeTab === tab.id;
@@ -153,7 +153,7 @@ export default function GuardPortal() {
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
                 aria-current={active ? 'page' : undefined}
-                className={`flex flex-col items-center py-2 px-1 rounded-xl transition ${active ? 'bg-ink text-white' : 'text-gray-500 hover:bg-gray-100'}`}
+                className={`flex flex-col items-center py-4 px-1 border border-gray-200 rounded-xl transition ${active ? 'bg-ink text-white' : 'text-gray-500 hover:bg-gray-100'}`}
               >
                 <Icon className="w-5 h-5" strokeWidth={active ? 2.3 : 1.8} />
                 <span className="text-[10px] mt-1 font-medium">{tab.label}</span>

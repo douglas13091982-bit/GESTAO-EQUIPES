@@ -61,7 +61,7 @@ export default function AdminDashboard() {
             <ShieldCheck className="w-5 h-5 text-signal" strokeWidth={2.2} />
           </div>
           <div className="leading-tight">
-            <p className="font-display text-lg font-semibold text-white">SecurOps</p>
+            <p className="font-display text-lg font-semibold text-white">GestPosto</p>
             <p className="text-[11px] text-gray-500">Painel do supervisor</p>
           </div>
         </div>
@@ -153,7 +153,7 @@ export default function AdminDashboard() {
 
         {showNotifications && <NotificationsPanel onClose={() => setShowNotifications(false)} />}
 
-        <main className="max-w-6xl mx-auto px-4 sm:px-8 py-6 pb-28 lg:pb-10">
+        <main className="max-w-6xl mx-auto px-4 sm:px-8 py-6 pb-6 lg:pb-10">
           {activeTab === 'dashboard' && <DashboardView />}
           {activeTab === 'posts' && <PostsView />}
           {activeTab === 'uniforms' && <UniformsView />}
@@ -166,11 +166,11 @@ export default function AdminDashboard() {
 
       {/* Navegação inferior (mobile) */}
       <nav
-        className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-ink text-gray-400 border-t border-white/10"
+        className="lg:hidden mx-4 mb-6 rounded-2xl bg-white text-gray-600 border border-gray-200 p-3"
         style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
         aria-label="Menu principal"
       >
-        <div className="grid grid-cols-7">
+        <div className="grid grid-cols-3 gap-2">
           {NAV.map(tab => {
             const Icon = tab.icon;
             const active = activeTab === tab.id;
@@ -180,7 +180,7 @@ export default function AdminDashboard() {
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
                 aria-current={active ? 'page' : undefined}
-                className={`relative flex flex-col items-center py-2.5 px-1 transition ${active ? 'text-white' : 'hover:text-gray-200'}`}
+                className={`relative flex flex-col items-center py-4 px-1 rounded-xl border border-gray-200 transition ${active ? 'bg-ink text-white' : 'bg-canvas text-ink'}`}
               >
                 {active && <span className="absolute top-0 left-3 right-3 h-0.5 rounded-b-full bg-signal" />}
                 <span className="relative">

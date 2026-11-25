@@ -1,0 +1,18 @@
+begin;
+create table public.escalas(id uuid primary key default gen_random_uuid(), colaborador_id uuid not null references public.profiles(id), posto_id uuid not null references public.postos(id), dia date not null, inicio time not null, fim time not null, status text not null default 'Prevista' check(status in ('Prevista','Folga','Falta','Cumprida')), unique(colaborador_id,dia,inicio));
+create table public.ocorrencias(id uuid primary key default gen_random_uuid(), colaborador_id uuid not null references public.profiles(id), posto_id uuid not null references public.postos(id), descricao text not null, status text not null default 'Aberta' check(status in ('Aberta','Em análise','Resolvida')), criado_em timestamptz not null default now());
+create table public.checklist_modelos(id uuid primary key default gen_random_uuid(), titulo text not null, funcao text not null, itens text[] not null check(cardinality(itens)>0));
+create table public.checklist_execucoes(id uuid primary key default gen_random_uuid(), modelo_id uuid not null references public.checklist_modelos(id), colaborador_id uuid not null references public.profiles(id), posto_id uuid not null references public.postos(id), respostas jsonb not null, criado_em timestamptz not null default now());
+create table public.comunicados(id uuid primary key default gen_random_uuid(), titulo text not null, mensagem text not null, criado_em timestamptz not null default now());
+create table public.comunicados_leituras(comunicado_id uuid references public.comunicados(id), colaborador_id uuid references public.profiles(id), lido_em timestamptz not null default now(), primary key(comunicado_id,colaborador_id));
+do $$ declare t text; begin foreach t in array array['escalas','ocorrencias','checklist_modelos','checklist_execucoes','comunicados','comunicados_leituras'] loop execute format('alter table public.%I enable row level security',t); execute format('create policy admin_all on public.%I for all to authenticated using(public.is_admin()) with check(public.is_admin())',t); end loop; end $$;
+create policy escala_propria on public.escalas for select to authenticated using(public.is_active() and colaborador_id=auth.uid());
+create policy ocorrencia_propria on public.ocorrencias for select to authenticated using(public.is_active() and colaborador_id=auth.uid());
+create policy ocorrencia_criar on public.ocorrencias for insert to authenticated with check(public.is_active() and colaborador_id=auth.uid() and status='Aberta' and exists(select 1 from public.vinculos v where v.colaborador_id=auth.uid() and v.posto_id=ocorrencias.posto_id and v.ativo));
+create policy modelos_ler on public.checklist_modelos for select to authenticated using(public.is_active() and exists(select 1 from public.profiles p where p.id=auth.uid() and p.funcao=checklist_modelos.funcao));
+create policy execucao_ler on public.checklist_execucoes for select to authenticated using(public.is_active() and colaborador_id=auth.uid());
+create policy execucao_criar on public.checklist_execucoes for insert to authenticated with check(public.is_active() and colaborador_id=auth.uid() and exists(select 1 from public.vinculos v where v.colaborador_id=auth.uid() and v.posto_id=checklist_execucoes.posto_id and v.ativo) and exists(select 1 from public.checklist_modelos m where m.id=checklist_execucoes.modelo_id));
+create policy comunicado_ler on public.comunicados for select to authenticated using(public.is_active());
+create policy leitura_propria on public.comunicados_leituras for select to authenticated using(colaborador_id=auth.uid());
+create policy leitura_criar on public.comunicados_leituras for insert to authenticated with check(public.is_active() and colaborador_id=auth.uid());
+commit;

@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 /* ------------------------------------------------------------------
-   SecurOps design tokens
+   GestPosto design tokens
    Tailwind v4 lê o @theme abaixo e remapeia as escalas "gray" e "blue"
    usadas em todas as telas — a paleta nova vale para o app inteiro.
    ------------------------------------------------------------------ */
@@ -22,22 +22,22 @@
   --color-gray-900: #0f172a;
 
   /* Azul cobalto — ação primária */
-  --color-blue-50: #eef3ff;
-  --color-blue-100: #dde7ff;
-  --color-blue-200: #bfd0ff;
-  --color-blue-300: #92adff;
-  --color-blue-400: #5f86f8;
-  --color-blue-500: #3a63ee;
-  --color-blue-600: #2748d4;
-  --color-blue-700: #2039ab;
-  --color-blue-800: #1d3187;
-  --color-blue-900: #1b2a69;
+  --color-blue-50: #edf7f8;
+  --color-blue-100: #d9edf0;
+  --color-blue-200: #b9dce2;
+  --color-blue-300: #8bc3cd;
+  --color-blue-400: #58a4b2;
+  --color-blue-500: #328596;
+  --color-blue-600: #226778;
+  --color-blue-700: #185361;
+  --color-blue-800: #103f4d;
+  --color-blue-900: #0c303b;
 
   /* Tokens próprios */
-  --color-ink: #0b1220;
-  --color-ink-2: #121b2e;
-  --color-ink-3: #1b2740;
-  --color-canvas: #f2f4f8;
+  --color-ink: #103f4d;
+  --color-ink-2: #164b59;
+  --color-ink-3: #205b69;
+  --color-canvas: #f1f5f7;
   --color-signal: #ffb020;
 
   /* Sombras com tom do ink, sem cinza genérico */
